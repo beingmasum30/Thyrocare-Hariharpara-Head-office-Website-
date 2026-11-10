@@ -21,6 +21,9 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { UserAuthModal } from './components/UserAuthModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { VillageSelectionModal } from './components/VillageSelectionModal';
+import { ScrollReveal } from './components/ScrollReveal';
+import { ScrollProgress } from './components/ScrollProgress';
+import { BackToTopButton } from './components/BackToTopButton';
 import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 
 const MainLayout: React.FC = () => {
@@ -77,6 +80,9 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#fdfdfd] text-slate-900 font-sans selection:bg-[#e23744] selection:text-white pb-16 md:pb-0">
+      {/* Top Scroll Reading Progress Indicator */}
+      <ScrollProgress />
+
       {/* Toast Notification */}
       {notification && (
         <div className="fixed top-4 right-4 z-60 max-w-sm bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700 flex items-center space-x-2.5 animate-in slide-in-from-top-2 duration-200">
@@ -90,64 +96,77 @@ const MainLayout: React.FC = () => {
       {/* Main Navigation Bar (Logo, Menu, Location Selector, Search Bar) */}
       <Navbar />
 
-      {/* Hero Promotional Banner Carousel (Matching reference screenshot) */}
-      <HeroCarousel />
+      {/* Hero Promotional Banner Carousel with initial page load fade-in animation */}
+      <ScrollReveal animation="fade-in" duration={600}>
+        <HeroCarousel />
+      </ScrollReveal>
 
-      {/* "What's In Store For You" (4 Action Cards matching reference screenshot) */}
-      <WhatsInStore />
+      {/* "What's In Store For You" */}
+      <ScrollReveal animation="fade-up" delay={50}>
+        <WhatsInStore />
+      </ScrollReveal>
 
-      {/* "Browse By Health Concern" (matching reference screenshot) */}
-      <HealthConcerns />
+      {/* "Browse By Health Concern" */}
+      <ScrollReveal animation="fade-left" delay={100}>
+        <HealthConcerns />
+      </ScrollReveal>
 
-      {/* "Request Callback" Prominent Button (matching reference screenshot) */}
-      <RequestCallbackBar />
+      {/* "Request Callback" Prominent Button */}
+      <ScrollReveal animation="zoom-in" delay={120}>
+        <RequestCallbackBar />
+      </ScrollReveal>
 
-      {/* Popular Health Packages (Aarogyam Packages) */}
-      <PopularPackagesSection />
+      {/* Popular Health Packages */}
+      <ScrollReveal animation="fade-up" delay={100}>
+        <PopularPackagesSection />
+      </ScrollReveal>
 
       {/* All Tests & Package Catalogue with Search & Filter */}
-      <CatalogueSection />
+      <ScrollReveal animation="fade-down" delay={100}>
+        <CatalogueSection />
+      </ScrollReveal>
 
       {/* Why Choose Us */}
-      <WhyChooseUs />
+      <ScrollReveal animation="fade-right" delay={100}>
+        <WhyChooseUs />
+      </ScrollReveal>
 
-      {/* How It Works (Search -> Cart -> Details -> WhatsApp) */}
-      <HowItWorks />
+      {/* How It Works */}
+      <ScrollReveal animation="fade-up" delay={100}>
+        <HowItWorks />
+      </ScrollReveal>
 
-      {/* Sample Collection Options (Home Sample Collection vs Centre Visit) */}
-      <SampleCollectionSection />
+      {/* Sample Collection Options */}
+      <ScrollReveal animation="fade-left" delay={100}>
+        <SampleCollectionSection />
+      </ScrollReveal>
 
       {/* Contact & Hariharpara Location */}
-      <ContactSection />
+      <ScrollReveal animation="zoom-in" delay={100}>
+        <ContactSection />
+      </ScrollReveal>
 
       {/* Footer */}
-      <Footer />
+      <ScrollReveal animation="fade-in" delay={100}>
+        <Footer />
+      </ScrollReveal>
 
-      {/* Floating WhatsApp Quick Action Button (matching bottom-right of reference screenshot) */}
+      {/* Floating Back to Top Button */}
+      <BackToTopButton />
+
+      {/* Floating WhatsApp Quick Action Button */}
       <FloatingWhatsApp />
 
       {/* Sticky Mobile Bottom Navigation */}
       <StickyMobileNav />
 
-      {/* Product Detail Modal */}
+      {/* Modals & Drawers */}
       <ProductDetailModal />
-
-      {/* Shopping Cart Drawer */}
       <CartDrawer />
-
-      {/* WhatsApp Patient Booking Modal */}
       <BookingModal />
-
-      {/* Free User Authentication Modal */}
       <UserAuthModal />
-
-      {/* Patient Profile & Order History Modal */}
       <UserProfileModal />
-
-      {/* Secure Admin Dashboard */}
       <AdminDashboard />
-
-      {/* Village and PIN Code Directory Selection Modal */}
       <VillageSelectionModal />
     </div>
   );

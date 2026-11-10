@@ -47,7 +47,17 @@ export const Navbar: React.FC = () => {
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Scroll shadow effect listener
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Close search dropdown when clicking outside
   useEffect(() => {
@@ -88,7 +98,9 @@ export const Navbar: React.FC = () => {
   };
 
   return (
-    <header className="sticky top-0 z-40 bg-white border-b border-slate-200/90 shadow-2xs">
+    <header className={`sticky top-0 z-40 bg-slate-900 border-b border-slate-800 transition-all duration-300 text-white ${
+      isScrolled ? 'shadow-lg bg-slate-900/95 backdrop-blur-xs' : 'shadow-sm'
+    }`}>
       
       {/* 1. TOP NAVBAR: Menu | Thyrocare Logo | Language Switcher | Patient Account | Cart Icon */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -99,7 +111,7 @@ export const Navbar: React.FC = () => {
             {/* Hamburger Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1 text-slate-800 hover:text-[#e23744] hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
+              className="p-1 text-slate-300 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
               aria-label="Open Navigation Menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5 sm:w-6 sm:h-6" /> : <Menu className="w-5 h-5 sm:w-6 sm:h-6" />}
@@ -111,7 +123,7 @@ export const Navbar: React.FC = () => {
               title="Thyrocare Hariharpara"
               className="cursor-pointer select-none group shrink-0 min-w-0"
             >
-              <ThyrocareLogo size="md" showTagline={false} showBranch={true} variant="badge" />
+              <ThyrocareLogo size="md" theme="dark" showTagline={false} showBranch={true} />
             </div>
           </div>
 
@@ -119,13 +131,13 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
             
             {/* Ultra-compact Bilingual Switcher (EN / বাংলা) */}
-            <div className="flex items-center bg-slate-100 p-0.5 rounded-md border border-slate-200 text-[10px] font-bold">
+            <div className="flex items-center bg-slate-800 p-0.5 rounded-md border border-slate-700 text-[10px] font-bold">
               <button
                 onClick={() => setLanguage('en')}
                 className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                   language === 'en'
                     ? 'bg-[#e23744] text-white shadow-2xs font-black'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 EN
@@ -135,7 +147,7 @@ export const Navbar: React.FC = () => {
                 className={`px-1.5 py-0.5 rounded transition-all cursor-pointer ${
                   language === 'bn'
                     ? 'bg-[#e23744] text-white shadow-2xs font-black'
-                    : 'text-slate-600 hover:text-slate-900'
+                    : 'text-slate-400 hover:text-white'
                 }`}
               >
                 বাং
@@ -146,28 +158,28 @@ export const Navbar: React.FC = () => {
             {currentUser ? (
               <button
                 onClick={() => setIsProfileModalOpen(true)}
-                className="flex items-center space-x-1.5 py-1 px-2 sm:px-2.5 bg-purple-50 hover:bg-purple-100 text-purple-900 border border-purple-200 rounded-xl transition-all cursor-pointer text-xs font-bold"
+                className="flex items-center space-x-1.5 py-1 px-2 sm:px-2.5 bg-slate-800 hover:bg-slate-700 text-white border border-slate-700 rounded-xl transition-all cursor-pointer text-xs font-bold"
                 title="View Patient Profile & Bookings"
               >
-                <div className="w-5 h-5 rounded-full bg-purple-700 text-white flex items-center justify-center text-[10px] font-bold">
+                <div className="w-5 h-5 rounded-full bg-[#e23744] text-white flex items-center justify-center text-[10px] font-bold">
                   {currentUser.name.charAt(0).toUpperCase()}
                 </div>
                 <span className="hidden sm:inline truncate max-w-[80px]">
                   {currentUser.name.split(' ')[0]}
                 </span>
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
               </button>
             ) : (
               <button
                 onClick={() => setIsAuthModalOpen(true)}
-                className="flex items-center space-x-1 py-1 px-2 sm:px-2.5 bg-slate-100 hover:bg-rose-50 text-slate-800 hover:text-[#e23744] border border-slate-200 hover:border-rose-200 rounded-xl transition-all cursor-pointer text-xs font-bold"
+                className="flex items-center space-x-1 py-1 px-2 sm:px-2.5 bg-slate-800 hover:bg-rose-950 text-slate-200 hover:text-white border border-slate-700 rounded-xl transition-all cursor-pointer text-xs font-bold"
                 title="Free Patient Login"
               >
-                <User className="w-3.5 h-3.5 text-slate-600" />
+                <User className="w-3.5 h-3.5 text-slate-300" />
                 <span className="text-[11px] sm:text-xs">
                   {language === 'bn' ? 'লগইন' : 'Login'}
                 </span>
-                <span className="hidden md:inline text-[9px] bg-emerald-100 text-emerald-800 px-1 rounded-sm uppercase font-black">
+                <span className="hidden md:inline text-[9px] bg-emerald-950 text-emerald-300 border border-emerald-800 px-1 rounded-sm uppercase font-black">
                   Free
                 </span>
               </button>
@@ -176,12 +188,12 @@ export const Navbar: React.FC = () => {
             {/* Shopping Cart Icon with Badge */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative p-1.5 text-slate-800 hover:text-[#e23744] hover:bg-slate-100 rounded-xl transition-all cursor-pointer shrink-0"
+              className="relative p-1.5 text-slate-200 hover:text-white hover:bg-slate-800 rounded-xl transition-all cursor-pointer shrink-0"
               aria-label="View Cart"
             >
               <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6 stroke-[1.8]" />
               {cartCount > 0 && (
-                <span className="absolute 0 top-0.5 right-0.5 bg-[#e23744] text-white font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
+                <span className="absolute top-0.5 right-0.5 bg-[#e23744] text-white font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
                   {cartCount}
                 </span>
               )}
@@ -192,27 +204,27 @@ export const Navbar: React.FC = () => {
       </div>
 
       {/* 2. LOCATION & HEALTH CONCERN STRIP matching screenshot */}
-      <div className="bg-slate-50/90 border-t border-b border-slate-200/80 text-xs text-slate-700">
+      <div className="bg-slate-950/80 border-t border-b border-slate-800 text-xs text-slate-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-10">
           
           {/* Left: Location Pin Dropdown */}
           <button
             onClick={() => setIsLocationModalOpen(true)}
-            className="flex items-center space-x-1.5 hover:text-[#e23744] transition-colors py-1 cursor-pointer font-medium truncate max-w-[65%] sm:max-w-none group"
+            className="flex items-center space-x-1.5 hover:text-rose-400 transition-colors py-1 cursor-pointer font-medium truncate max-w-[65%] sm:max-w-none group"
             title={language === 'bn' ? 'গ্রাম বা পিনকোড পরিবর্তন করতে ক্লিক করুন' : 'Click to select Village / PIN code'}
           >
-            <MapPin className="w-4 h-4 text-[#e23744] shrink-0" />
-            <span className="truncate font-bold text-slate-900 group-hover:text-[#e23744]">
+            <MapPin className="w-4 h-4 text-rose-500 shrink-0" />
+            <span className="truncate font-bold text-white group-hover:text-rose-400">
               {selectedVillage.pincode}, {language === 'bn' ? selectedVillage.name_bn : selectedVillage.name_en}
             </span>
             <span className="hidden sm:inline text-slate-400 font-normal">
               ({selectedVillage.gram_panchayat})
             </span>
-            <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-[#e23744]" />
+            <ChevronDown className="w-3.5 h-3.5 text-slate-400 shrink-0 group-hover:text-rose-400" />
           </button>
 
           {/* Vertical Divider */}
-          <div className="h-4 w-px bg-slate-300 mx-2" />
+          <div className="h-4 w-px bg-slate-800 mx-2" />
 
           {/* Right: Browse By Health Concern shortcut */}
           <button
@@ -220,7 +232,7 @@ export const Navbar: React.FC = () => {
               const el = document.getElementById('health-concerns');
               if (el) el.scrollIntoView({ behavior: 'smooth' });
             }}
-            className="flex items-center space-x-1 hover:text-[#e23744] transition-colors py-1 cursor-pointer font-semibold text-slate-700 shrink-0"
+            className="flex items-center space-x-1 hover:text-rose-400 transition-colors py-1 cursor-pointer font-semibold text-slate-300 shrink-0"
           >
             <span>{language === 'bn' ? 'সমস্যা অনুযায়ী টেস্ট' : 'Browse By Health Concern'}</span>
             <ChevronRight className="w-4 h-4 text-slate-400" />

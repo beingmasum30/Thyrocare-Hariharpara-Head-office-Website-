@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { ChevronLeft, ChevronRight, ShieldCheck, Sparkles, ArrowRight } from 'lucide-react';
 
+import { FastTypingBanner } from './FastTypingBanner';
+
 export const HeroCarousel: React.FC = () => {
   const { language, setSelectedCategory, setSelectedProduct, products, addToCart } = useApp();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -100,6 +102,9 @@ export const HeroCarousel: React.FC = () => {
 
   return (
     <section className="px-4 sm:px-6 lg:px-8 pt-3 pb-6 max-w-7xl mx-auto">
+      {/* Fast Typing Animated Graphics FX Banner */}
+      <FastTypingBanner />
+
       {/* Carousel Container */}
       <div className="relative rounded-3xl overflow-hidden border border-slate-200/90 shadow-md">
         
@@ -107,14 +112,14 @@ export const HeroCarousel: React.FC = () => {
         <div className={`p-6 sm:p-9 bg-gradient-to-r ${slide.bgGradient} transition-all duration-500 relative min-h-[280px] sm:min-h-[300px] flex flex-col justify-between`}>
           
           {/* Top Tag and Badge */}
-          <div className="flex items-center justify-between gap-2">
-            <span className="inline-block bg-[#e23744] text-white text-xs font-black px-3.5 py-1 rounded-r-full -ml-6 sm:-ml-9 uppercase tracking-wider shadow-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2 max-w-full overflow-hidden">
+            <span className="inline-block bg-[#e23744] text-white text-[11px] sm:text-xs font-black px-3 py-0.5 sm:py-1 rounded-r-full rounded-l-md uppercase tracking-wider shadow-xs shrink-0">
               {slide.tag}
             </span>
 
-            <span className="inline-flex items-center space-x-1 text-[11px] font-bold text-slate-700 bg-white/90 backdrop-blur-xs px-2.5 py-1 rounded-full border border-slate-200 shadow-2xs">
-              <Sparkles className="w-3 h-3 text-amber-500" />
-              <span>{slide.badgeText}</span>
+            <span className="inline-flex items-center space-x-1 text-[10px] sm:text-[11px] font-bold text-slate-700 bg-white/95 backdrop-blur-xs px-2.5 py-0.5 sm:py-1 rounded-full border border-slate-200 shadow-2xs shrink-0 max-w-full">
+              <Sparkles className="w-3 h-3 text-amber-500 shrink-0" />
+              <span className="truncate">{slide.badgeText}</span>
             </span>
           </div>
 

@@ -2,6 +2,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { Product, Booking, BookingStatus } from '../types';
 import { initialProducts } from '../data/initialProducts';
 import { calculateFinalPrice } from '../utils/pricing';
+import { firestoreService, testFirestoreConnection } from './firebase';
 
 const STORAGE_KEYS = {
   PRODUCTS: 'thyrocare_products_v1',
@@ -25,6 +26,9 @@ export const isSupabaseConfigured = (): boolean => {
 export const supabase: SupabaseClient | null = isSupabaseConfigured()
   ? createClient(supabaseUrl, supabaseAnonKey)
   : null;
+
+// Initialize Firestore connection test
+testFirestoreConnection();
 
 // ================= LOCAL STORAGE HELPERS =================
 function getLocalProducts(): Product[] {
@@ -92,25 +96,12 @@ function setLocalUsers(users: import('../types').UserProfile[]): void {
   }
 }
 
-// ================= UNIFIED API =================
+// ================= UNIFIED API WITH FIRESTORE REALTIME =================
 export const dbService = {
   /**
    * Fetch all active products
    */
   async getProducts(): Promise<Product[]> {
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select('*')
-          .order('name');
-        if (!error && data && data.length > 0) {
-          return data as Product[];
-        }
-      } catch (err) {
-        console.warn('Supabase fetch failed, falling back to local DB:', err);
-      }
-    }
     return getLocalProducts();
   },
 
@@ -129,12 +120,11 @@ export const dbService = {
       updated_at: new Date().toISOString()
     };
 
-    if (supabase) {
-      try {
-        await supabase.from('products').upsert(updated);
-      } catch (err) {
-        console.warn('Supabase upsert failed:', err);
-      }
+    // Save to Firestore Database for Realtime Sync
+    try {
+      await firestoreService.saveProduct(updated);
+    } catch (err) {
+      console.warn('Firestore saveProduct warning:', err);
     }
 
     const current = getLocalProducts();
@@ -152,12 +142,10 @@ export const dbService = {
    * Delete product
    */
   async deleteProduct(id: string): Promise<void> {
-    if (supabase) {
-      try {
-        await supabase.from('products').delete().eq('id', id);
-      } catch (err) {
-        console.warn('Supabase delete failed:', err);
-      }
+    try {
+      await firestoreService.deleteProduct(id);
+    } catch (err) {
+      console.warn('Firestore deleteProduct warning:', err);
     }
 
     const current = getLocalProducts();
@@ -177,52 +165,18 @@ export const dbService = {
    * Get all customer booking orders
    */
   async getBookings(): Promise<Booking[]> {
-    if (supabase) {
-      try {
-        const { data, error } = await supabase
-          .from('bookings')
-          .select('*, booking_items(*)')
-          .order('created_at', { ascending: false });
-        if (!error && data) {
-          return data.map(b => ({
-            ...b,
-            items: b.booking_items || []
-          })) as Booking[];
-        }
-      } catch (err) {
-        console.warn('Supabase getBookings failed, falling back to local storage:', err);
-      }
-    }
     return getLocalBookings();
   },
 
   /**
-   * Save a new customer booking
+   * Save a new customer booking to Firestore and Local Storage
    */
   async saveBooking(booking: Booking): Promise<Booking> {
-    if (supabase) {
-      try {
-        const { items, ...bookingData } = booking;
-        const { data: inserted, error } = await supabase
-          .from('bookings')
-          .insert(bookingData)
-          .select()
-          .single();
-
-        if (!error && inserted && items && items.length > 0) {
-          const itemsToInsert = items.map(item => ({
-            booking_id: inserted.id,
-            product_id: item.product_id,
-            product_name: item.product_name,
-            test_code: item.test_code,
-            price: item.price,
-            quantity: item.quantity
-          }));
-          await supabase.from('booking_items').insert(itemsToInsert);
-        }
-      } catch (err) {
-        console.warn('Supabase saveBooking failed:', err);
-      }
+    // Save to Firestore Realtime Database
+    try {
+      await firestoreService.saveBooking(booking);
+    } catch (err) {
+      console.warn('Firestore saveBooking warning:', err);
     }
 
     const current = getLocalBookings();
@@ -232,18 +186,13 @@ export const dbService = {
   },
 
   /**
-   * Update status of an order
+   * Update status of an order in Firestore
    */
   async updateBookingStatus(id: string, status: BookingStatus): Promise<void> {
-    if (supabase) {
-      try {
-        await supabase
-          .from('bookings')
-          .update({ booking_status: status })
-          .eq('id', id);
-      } catch (err) {
-        console.warn('Supabase updateBookingStatus failed:', err);
-      }
+    try {
+      await firestoreService.updateBookingStatus(id, status);
+    } catch (err) {
+      console.warn('Firestore updateBookingStatus warning:', err);
     }
 
     const current = getLocalBookings();
@@ -264,11 +213,11 @@ export const dbService = {
       is_active: p.is_active !== false
     }));
 
-    if (supabase) {
+    for (const p of validated) {
       try {
-        await supabase.from('products').upsert(validated);
-      } catch (err) {
-        console.warn('Supabase bulk upsert failed:', err);
+        await firestoreService.saveProduct(p);
+      } catch (e) {
+        // continue
       }
     }
 
@@ -327,7 +276,6 @@ export const dbService = {
    * Get bookings matching a patient's user_id, email or phone
    */
   async getBookingsForUser(identifier: { email?: string; userId?: string; phone?: string }): Promise<Booking[]> {
-    const cleanEmail = identifier.email?.trim().toLowerCase();
     const cleanPhone = identifier.phone?.replace(/\D/g, '');
     const all = await this.getBookings();
     return all.filter(b => {

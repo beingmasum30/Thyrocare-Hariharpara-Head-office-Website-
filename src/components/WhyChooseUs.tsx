@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
+import { ScrollReveal } from './ScrollReveal';
 import { 
   CalendarCheck, 
   Home, 
@@ -68,20 +69,21 @@ export const WhyChooseUs: React.FC = () => {
           {features.map((f, i) => {
             const Icon = f.icon;
             return (
-              <div 
-                key={i}
-                className="bg-slate-50/70 rounded-2xl p-6 border border-slate-200/80 hover:border-purple-200 hover:shadow-lg hover:bg-white transition-all duration-200 space-y-3"
-              >
-                <div className={`w-12 h-12 rounded-xl ${f.color} flex items-center justify-center shadow-xs`}>
-                  <Icon className="w-6 h-6" />
+              <ScrollReveal key={i} animation="fade-up" delay={i * 80}>
+                <div 
+                  className="bg-slate-50/70 rounded-2xl p-6 border border-slate-200/80 hover:border-purple-200 hover:shadow-lg hover:bg-white transition-all duration-200 space-y-3 h-full"
+                >
+                  <div className={`w-12 h-12 rounded-xl ${f.color} flex items-center justify-center shadow-xs`}>
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <h3 className="text-lg font-bold text-slate-900">
+                    {f.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    {f.desc}
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-slate-900">
-                  {f.title}
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                  {f.desc}
-                </p>
-              </div>
+              </ScrollReveal>
             );
           })}
         </div>

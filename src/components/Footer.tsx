@@ -33,8 +33,11 @@ export const Footer: React.FC = () => {
 
             {/* Franchise Notice */}
             <div className="bg-slate-800/80 p-3 rounded-xl border border-slate-700/80 text-[11px] text-slate-400 leading-relaxed">
-              <ShieldCheck className="w-3.5 h-3.5 text-purple-400 inline mr-1" />
-              <strong className="text-slate-200">{t.authorizedPartner}:</strong>{' '}
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400 inline mr-1" />
+              <strong className="text-white">{t.authorizedPartner}:</strong>{' '}
+              <span className="text-amber-300 font-extrabold bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-700/80 mr-1">
+                Franchise Partner Code: P7523
+              </span>
               {t.authorizedDisclaimer}
             </div>
           </div>

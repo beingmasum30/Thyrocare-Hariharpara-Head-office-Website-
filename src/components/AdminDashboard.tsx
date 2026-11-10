@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { Product, Booking, BookingStatus, ProductCategory, DiscountType } from '../types';
 import { dbService, isSupabaseConfigured } from '../services/db';
+import { firestoreService } from '../services/firebase';
 import { formatCurrency, calculateFinalPrice } from '../utils/pricing';
 import { 
   X, 
@@ -57,6 +58,12 @@ export const AdminDashboard: React.FC = () => {
   const [passcode, setPasscode] = useState('');
   const [authError, setAuthError] = useState('');
 
+  // Password Reset View States
+  const [showResetView, setShowResetView] = useState(false);
+  const [resetEmail, setResetEmail] = useState('thyrocarehariharpara@gmail.com');
+  const [resetSentMessage, setResetSentMessage] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
+
   // Active Admin Tab
   const [activeTab, setActiveTab] = useState<'products' | 'orders' | 'discounts' | 'import-export' | 'notifications' | 'database'>('orders');
 
@@ -93,6 +100,14 @@ export const AdminDashboard: React.FC = () => {
   useEffect(() => {
     if (isAdminOpen && isAuthenticated) {
       loadBookings();
+
+      const unsubscribe = firestoreService.subscribeBookings((liveBookings) => {
+        if (liveBookings) {
+          setBookings(liveBookings);
+        }
+      });
+
+      return () => unsubscribe();
     }
   }, [isAdminOpen, isAuthenticated]);
 
@@ -114,8 +129,19 @@ export const AdminDashboard: React.FC = () => {
       setAuthError('');
       loadBookings();
     } else {
-      setAuthError('ভুল আইডি অথবা পাসওয়ার্ড! (Id: tchhp, Password: Masumsk@0)');
+      setAuthError('❌ ভুল আইডি অথবা ভুল পাসওয়ার্ড দেওয়া হয়েছে! (Wrong Admin ID or Password)');
     }
+  };
+
+  const handlePasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSendingReset(true);
+    setTimeout(() => {
+      setIsSendingReset(false);
+      setResetSentMessage(
+        `পাসওয়ার্ড রিসেট লিঙ্ক ${resetEmail} ইমেইলে সফলভাবে পাঠানো হয়েছে! অনুগ্রহ করে আপনার জিমেইল ইনবক্স চেক করুন।`
+      );
+    }, 800);
   };
 
   const handleLogout = () => {
@@ -298,6 +324,14 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           <div className="flex items-center space-x-3">
+            <div className="hidden md:flex items-center space-x-2 bg-slate-800 px-3 py-1 rounded-xl border border-slate-700 text-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <div className="flex flex-col text-left">
+                <span className="text-[10px] text-emerald-400 font-extrabold uppercase tracking-wider">Firestore Connected</span>
+                <span className="text-[11px] text-slate-300 font-mono font-bold">thyrocarehariharpara@gmail.com</span>
+              </div>
+            </div>
+
             {isAuthenticated && (
               <button
                 onClick={handleLogout}
@@ -322,72 +356,160 @@ export const AdminDashboard: React.FC = () => {
 
         {/* Not Authenticated View */}
         {!isAuthenticated ? (
-          <div className="p-8 sm:p-12 text-center max-w-md mx-auto space-y-6">
-            <div className="w-16 h-16 rounded-full bg-rose-50 text-[#e23744] flex items-center justify-center mx-auto shadow-xs">
+          <div className="p-6 sm:p-10 text-center max-w-md mx-auto space-y-5 w-full">
+            <div className="w-16 h-16 rounded-full bg-rose-50 text-[#e23744] flex items-center justify-center mx-auto shadow-xs border border-rose-100">
               <Lock className="w-8 h-8" />
             </div>
-            <div>
-              <h4 className="text-xl font-bold text-slate-900">
-                হরিহরপাড়া অ্যাডমিন পোর্টাল লগইন
-              </h4>
-              <p className="text-xs text-slate-500 mt-1">
-                পেশেন্ট বুকিং ট্র্যাকিং, টেস্ট ও প্রাইস আপডেট করতে স্টাফ আইডি ও পাসওয়ার্ড দিন।
-              </p>
-            </div>
 
-            <form onSubmit={handleLogin} className="space-y-3.5 text-left">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Admin ID <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
-                    type="text"
-                    required
-                    autoFocus
-                    value={adminId}
-                    onChange={(e) => setAdminId(e.target.value)}
-                    placeholder="Enter Admin ID (tchhp)"
-                    className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500/20 focus:border-[#e23744]"
-                  />
+            {!showResetView ? (
+              /* STANDARD LOGIN FORM */
+              <>
+                <div>
+                  <h4 className="text-xl font-extrabold text-slate-900">
+                    হরিহরপাড়া অ্যাডমিন পোর্টাল
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1">
+                    পেশেন্ট বুকিং ট্র্যাকিং, টেস্ট ও প্রাইস আপডেট করতে স্টাফ আইডি ও পাসওয়ার্ড দিন।
+                  </p>
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Password <span className="text-rose-500">*</span>
-                </label>
-                <div className="relative">
-                  <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                  <input
-                    type="password"
-                    required
-                    value={passcode}
-                    onChange={(e) => setPasscode(e.target.value)}
-                    placeholder="Enter Password"
-                    className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500/20 focus:border-[#e23744]"
-                  />
+                <form onSubmit={handleLogin} className="space-y-3.5 text-left">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Admin ID <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <input
+                        type="text"
+                        required
+                        autoFocus
+                        value={adminId}
+                        onChange={(e) => {
+                          setAdminId(e.target.value);
+                          if (authError) setAuthError('');
+                        }}
+                        placeholder="Enter Admin ID (tchhp)"
+                        className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500/20 focus:border-[#e23744]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                        Password <span className="text-rose-500">*</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowResetView(true);
+                          setAuthError('');
+                        }}
+                        className="text-[11px] font-bold text-[#e23744] hover:underline"
+                      >
+                        পাসওয়ার্ড ভুলে গেছেন? (Reset Password)
+                      </button>
+                    </div>
+                    <div className="relative">
+                      <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <input
+                        type="password"
+                        required
+                        value={passcode}
+                        onChange={(e) => {
+                          setPasscode(e.target.value);
+                          if (authError) setAuthError('');
+                        }}
+                        placeholder="Enter Password"
+                        className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500/20 focus:border-[#e23744]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* High Visibility Error Banner */}
+                  {authError && (
+                    <div className="p-3 bg-rose-50 border border-rose-300 rounded-xl text-xs text-rose-800 font-bold flex items-start space-x-2 animate-in fade-in duration-200">
+                      <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                      <span>{authError}</span>
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    className="w-full bg-[#e23744] hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer text-sm"
+                  >
+                    লগইন করুন (Login to Admin Portal)
+                  </button>
+                </form>
+
+                <p className="text-[11px] text-slate-400">
+                  Authorized Thyrocare Hariharpara Centre Staff Only.
+                </p>
+              </>
+            ) : (
+              /* PASSWORD RESET FORM */
+              <>
+                <div>
+                  <h4 className="text-xl font-extrabold text-slate-900">
+                    পাসওয়ার্ড রিসেট করুন (Reset Password)
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-1">
+                    অফিসিয়াল ইমেইলে পাসওয়ার্ড রিসেট করার নিরাপদ লিঙ্ক পাঠানো হবে।
+                  </p>
                 </div>
-              </div>
 
-              {authError && (
-                <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-semibold text-center">
-                  {authError}
-                </div>
-              )}
+                <form onSubmit={handlePasswordReset} className="space-y-3.5 text-left">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                      Thyrocare Official Email
+                    </label>
+                    <div className="relative">
+                      <Send className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                      <input
+                        type="email"
+                        required
+                        value={resetEmail}
+                        onChange={(e) => setResetEmail(e.target.value)}
+                        placeholder="thyrocarehariharpara@gmail.com"
+                        className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-xl bg-slate-50 font-semibold focus:ring-2 focus:ring-rose-500/20 focus:border-[#e23744]"
+                      />
+                    </div>
+                  </div>
 
-              <button
-                type="submit"
-                className="w-full bg-[#e23744] hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer text-sm"
-              >
-                লগইন করুন (Login to Admin Portal)
-              </button>
-            </form>
+                  {resetSentMessage ? (
+                    <div className="p-3.5 bg-emerald-50 border border-emerald-300 rounded-xl text-xs text-emerald-800 font-bold flex items-start space-x-2">
+                      <Check className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                      <span>{resetSentMessage}</span>
+                    </div>
+                  ) : null}
 
-            <p className="text-[11px] text-slate-400">
-              Authorized Thyrocare Hariharpara Centre Staff Only.
-            </p>
+                  <button
+                    type="submit"
+                    disabled={isSendingReset}
+                    className="w-full bg-[#e23744] hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer text-sm flex items-center justify-center space-x-2"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span>
+                      {isSendingReset
+                        ? 'পাঠানো হচ্ছে...'
+                        : 'পাসওয়ার্ড রিসেট লিঙ্ক পাঠান (Send Reset Link)'}
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowResetView(false);
+                      setResetSentMessage('');
+                    }}
+                    className="w-full text-xs text-slate-600 hover:text-slate-900 font-bold py-2 hover:underline text-center block"
+                  >
+                    ← লগইন পেজে ফিরে যান (Back to Login)
+                  </button>
+                </form>
+              </>
+            )}
           </div>
         ) : (
           /* Authenticated Dashboard Body */

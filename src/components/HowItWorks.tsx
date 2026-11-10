@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
+import { ScrollReveal } from './ScrollReveal';
 import { Search, ShoppingBag, UserCheck, MessageSquare } from 'lucide-react';
 
 export const HowItWorks: React.FC = () => {
@@ -52,32 +53,33 @@ export const HowItWorks: React.FC = () => {
           {steps.map((s, idx) => {
             const Icon = s.icon;
             return (
-              <div 
-                key={idx}
-                className="relative bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
-                      <Icon className="w-6 h-6" />
+              <ScrollReveal key={idx} animation="fade-up" delay={idx * 100}>
+                <div 
+                  className="relative bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all space-y-3 flex flex-col justify-between h-full"
+                >
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+                        <Icon className="w-6 h-6" />
+                      </div>
+                      <span className="text-2xl font-black text-slate-300">
+                        {s.step}
+                      </span>
                     </div>
-                    <span className="text-2xl font-black text-slate-300">
-                      {s.step}
-                    </span>
+
+                    <h3 className="text-base sm:text-lg font-bold text-slate-900">
+                      {s.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
+                      {s.desc}
+                    </p>
                   </div>
 
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900">
-                    {s.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-600 mt-2 leading-relaxed">
-                    {s.desc}
-                  </p>
+                  <div className="pt-3 border-t border-slate-100 text-[11px] font-semibold text-purple-700">
+                    Step {idx + 1} of 4
+                  </div>
                 </div>
-
-                <div className="pt-3 border-t border-slate-100 text-[11px] font-semibold text-purple-700">
-                  Step {idx + 1} of 4
-                </div>
-              </div>
+              </ScrollReveal>
             );
           })}
         </div>

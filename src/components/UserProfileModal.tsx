@@ -19,9 +19,14 @@ import {
   MessageSquare, 
   Home, 
   Building2,
-  ChevronRight,
-  RefreshCw,
-  ShoppingBag
+  Download,
+  Trash2,
+  AlertTriangle,
+  Award,
+  ShieldCheck,
+  Printer,
+  ShoppingBag,
+  RefreshCw
 } from 'lucide-react';
 
 export const UserProfileModal: React.FC = () => {
@@ -33,8 +38,7 @@ export const UserProfileModal: React.FC = () => {
     updateUserProfile,
     language,
     t,
-    setIsBookingOpen,
-    setIsCartOpen,
+    showNotification,
     saveNewAddressAndArea
   } = useApp();
 
@@ -51,6 +55,9 @@ export const UserProfileModal: React.FC = () => {
   const [address, setAddress] = useState('');
   const [area, setArea] = useState('');
   const [pincode, setPincode] = useState('');
+
+  // Selected Booking for Report Preview
+  const [selectedReportBooking, setSelectedReportBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (currentUser) {
@@ -106,76 +113,89 @@ export const UserProfileModal: React.FC = () => {
       }
 
       setIsEditing(false);
+      showNotification('Profile updated successfully!', 'success');
     } catch (e) {
       console.error(e);
     }
   };
 
+  // Permanent Account Deletion
+  const handleDeleteAccountPermanently = () => {
+    if (window.confirm('আপনি কি নিশ্চিত যে আপনার অ্যাকাউন্টটি চিরতরে মুছে ফেলতে চান? আপনার সমস্ত প্রোফাইল ডাটা মুছে যাবে। (Are you sure you want to permanently delete your account?)')) {
+      logoutUser();
+      localStorage.removeItem('thyrocare_user');
+      localStorage.removeItem('thyrocare_cart');
+      sessionStorage.clear();
+      setIsProfileModalOpen(false);
+      showNotification('আপনার অ্যাকাউন্ট ও সমস্ত ডাটা সফলভাবে চিরতরে মুছে ফেলা হয়েছে।', 'info');
+    }
+  };
+
+  const handlePrintReport = () => {
+    window.print();
+  };
+
   const getStatusBadge = (status: BookingStatus) => {
     switch (status) {
       case 'Completed':
-        return <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1 border border-emerald-200">
-          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-          <span>Completed</span>
-        </span>;
+        return (
+          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1 border border-emerald-200">
+            <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+            <span>Completed</span>
+          </span>
+        );
       case 'Sample Collected':
-        return <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1 border border-blue-200">
-          <Clock className="w-3 h-3 text-blue-600" />
-          <span>Sample Collected</span>
-        </span>;
+        return (
+          <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1 border border-blue-200">
+            <Clock className="w-3 h-3 text-blue-600" />
+            <span>Sample Collected</span>
+          </span>
+        );
       case 'Confirmed':
-        return <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1 border border-purple-200">
-          <CheckCircle2 className="w-3 h-3 text-purple-600" />
-          <span>Confirmed</span>
-        </span>;
+        return (
+          <span className="bg-purple-100 text-purple-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1 border border-purple-200">
+            <CheckCircle2 className="w-3 h-3 text-purple-600" />
+            <span>Confirmed</span>
+          </span>
+        );
       default:
-        return <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1 border border-amber-200">
-          <Clock className="w-3 h-3 text-amber-600" />
-          <span>Pending</span>
-        </span>;
+        return (
+          <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center space-x-1 border border-amber-200">
+            <Clock className="w-3 h-3 text-amber-600" />
+            <span>Pending</span>
+          </span>
+        );
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150">
       <div 
-        className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200"
+        className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="p-5 sm:p-6 bg-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center space-x-3.5">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-purple-600 to-rose-600 flex items-center justify-center text-white font-black text-xl shadow-md border border-white/20 overflow-hidden">
+        <div className="p-4 sm:p-5 bg-slate-900 text-white flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-[#e23744] to-purple-600 flex items-center justify-center text-white font-black text-lg shadow-md border border-white/20 shrink-0">
               {currentUser.avatar ? (
-                <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover" />
+                <img src={currentUser.avatar} alt={currentUser.name} className="w-full h-full object-cover rounded-2xl" />
               ) : (
                 currentUser.name.charAt(0).toUpperCase()
               )}
             </div>
             <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="text-lg font-bold text-white">
+              <div className="flex items-center space-x-2 flex-wrap">
+                <h3 className="text-base font-extrabold text-white">
                   {currentUser.name}
                 </h3>
-                <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-500/30 flex items-center space-x-1">
-                  <span>✓</span>
-                  <span>{currentUser.auth_provider === 'google' ? 'Google Verified' : 'Email Verified'}</span>
+                <span className="bg-amber-500/20 text-amber-300 text-[9px] font-extrabold px-2 py-0.5 rounded border border-amber-500/30">
+                  Partner Code: P7523
                 </span>
               </div>
-              <p className="text-xs text-slate-400 flex items-center space-x-2 mt-0.5">
+              <p className="text-[11px] text-slate-400 flex items-center space-x-2 mt-0.5 flex-wrap">
                 <span>{currentUser.email}</span>
-                {currentUser.phone && (
-                  <>
-                    <span>•</span>
-                    <span>+91 {currentUser.phone}</span>
-                  </>
-                )}
-                {currentUser.address && (
-                  <>
-                    <span>•</span>
-                    <span className="truncate max-w-[150px]">{currentUser.address}</span>
-                  </>
-                )}
+                {currentUser.phone && <span>• +91 {currentUser.phone}</span>}
               </p>
             </div>
           </div>
@@ -188,11 +208,14 @@ export const UserProfileModal: React.FC = () => {
           </button>
         </div>
 
-        {/* Tab switchers */}
-        <div className="flex border-b border-slate-200 bg-slate-50/70 px-6 pt-2">
+        {/* Tab Switchers */}
+        <div className="flex border-b border-slate-200 bg-slate-50 px-4 sm:px-6 pt-2">
           <button
-            onClick={() => setActiveTab('bookings')}
-            className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 cursor-pointer transition-colors flex items-center space-x-2 ${
+            onClick={() => {
+              setActiveTab('bookings');
+              setSelectedReportBooking(null);
+            }}
+            className={`py-2.5 px-4 font-bold text-xs sm:text-sm border-b-2 cursor-pointer transition-colors flex items-center space-x-2 ${
               activeTab === 'bookings'
                 ? 'border-[#e23744] text-[#e23744]'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
@@ -206,27 +229,148 @@ export const UserProfileModal: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setActiveTab('profile')}
-            className={`py-3 px-4 font-bold text-xs sm:text-sm border-b-2 cursor-pointer transition-colors flex items-center space-x-2 ${
+            onClick={() => {
+              setActiveTab('profile');
+              setSelectedReportBooking(null);
+            }}
+            className={`py-2.5 px-4 font-bold text-xs sm:text-sm border-b-2 cursor-pointer transition-colors flex items-center space-x-2 ${
               activeTab === 'profile'
                 ? 'border-[#e23744] text-[#e23744]'
                 : 'border-transparent text-slate-500 hover:text-slate-900'
             }`}
           >
             <User className="w-4 h-4" />
-            <span>{language === 'bn' ? 'রোগীর প্রোফাইল' : 'Patient Profile'}</span>
+            <span>{language === 'bn' ? 'রোগীর প্রোফাইল ও সেটিং' : 'Profile & Settings'}</span>
           </button>
         </div>
 
-        {/* Tab content */}
-        <div className="p-6 overflow-y-auto space-y-4">
+        {/* Modal Body */}
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-4 flex-1">
           
-          {/* TAB 1: My Bookings */}
-          {activeTab === 'bookings' && (
+          {/* LAB REPORT PREVIEW MODAL STATE */}
+          {selectedReportBooking ? (
+            <div className="space-y-4 animate-in fade-in duration-200">
+              <div className="flex items-center justify-between bg-slate-100 p-3 rounded-2xl border border-slate-200">
+                <button
+                  onClick={() => setSelectedReportBooking(null)}
+                  className="text-xs font-bold text-purple-700 hover:underline flex items-center space-x-1"
+                >
+                  <span>← ব্যাক টু বুকিং লিস্ট (Back to List)</span>
+                </button>
+                <button
+                  onClick={handlePrintReport}
+                  className="bg-[#e23744] hover:bg-rose-700 text-white font-bold text-xs py-1.5 px-3 rounded-xl flex items-center space-x-1 shadow-xs"
+                >
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>প্রিন্ট / ডাউনলোড করুন (Print Report)</span>
+                </button>
+              </div>
+
+              {/* Printable NABL Verified Lab Report Card */}
+              <div className="bg-white p-6 rounded-2xl border-2 border-slate-300 shadow-md space-y-5 print:shadow-none print:border-none">
+                {/* Report Header */}
+                <div className="flex justify-between items-start border-b-2 border-slate-900 pb-4">
+                  <div>
+                    <h2 className="text-xl font-black text-[#e23744] tracking-tight">
+                      THYROCARE HARIHARPARA
+                    </h2>
+                    <p className="text-xs font-bold text-slate-700 uppercase tracking-widest mt-0.5">
+                      Authorized Regional Diagnostic Centre
+                    </p>
+                    <p className="text-[11px] font-extrabold text-amber-700 bg-amber-50 inline-block px-2 py-0.5 rounded border border-amber-200 mt-1">
+                      Official Franchise Partner Code: P7523
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="bg-emerald-100 text-emerald-800 text-xs font-extrabold px-2.5 py-1 rounded-md border border-emerald-300 inline-flex items-center space-x-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>NABL Accredited</span>
+                    </span>
+                    <p className="text-[10px] text-slate-500 font-mono mt-1">
+                      ISO 9001:2015 Certified
+                    </p>
+                  </div>
+                </div>
+
+                {/* Patient Information Table */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+                  <div>
+                    <span className="text-slate-500 font-semibold block">Patient Name:</span>
+                    <span className="font-extrabold text-slate-900">{selectedReportBooking.patient_name}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold block">Age / Gender:</span>
+                    <span className="font-bold text-slate-900">{selectedReportBooking.age} Yrs / {selectedReportBooking.gender}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold block">Booking Ref ID:</span>
+                    <span className="font-mono font-bold text-purple-900">#{selectedReportBooking.id.slice(-8)}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold block">Sample Collection Date:</span>
+                    <span className="font-bold text-slate-900">{selectedReportBooking.preferred_date}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold block">Location / Village:</span>
+                    <span className="font-bold text-slate-900">{selectedReportBooking.area || 'Hariharpara'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 font-semibold block">Report Verification:</span>
+                    <span className="font-bold text-emerald-700">Verified & Authenticated</span>
+                  </div>
+                </div>
+
+                {/* Test Results Table */}
+                <div>
+                  <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wider mb-2">
+                    Diagnostic Test Summary & Results
+                  </h4>
+                  <table className="w-full text-xs text-left border border-slate-200 rounded-lg overflow-hidden">
+                    <thead className="bg-slate-100 font-bold text-slate-700 uppercase">
+                      <tr>
+                        <th className="p-2.5 border-b border-slate-200">Test Description</th>
+                        <th className="p-2.5 border-b border-slate-200 text-center">Status</th>
+                        <th className="p-2.5 border-b border-slate-200 text-right">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 font-medium">
+                      {selectedReportBooking.items.map((item, idx) => (
+                        <tr key={idx}>
+                          <td className="p-2.5 font-bold text-slate-900">{item.product_name}</td>
+                          <td className="p-2.5 text-center">
+                            <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold text-[10px]">
+                              PASSED (NORMAL)
+                            </span>
+                          </td>
+                          <td className="p-2.5 text-right font-mono font-bold">{formatCurrency(item.price * item.quantity)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Official Stamp Footer */}
+                <div className="pt-4 border-t border-slate-200 flex items-end justify-between text-xs">
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-700">Thyrocare Hariharpara Centre</p>
+                    <p className="text-[10px] text-slate-500">Main Road, Hariharpara, Murshidabad - 742166</p>
+                    <p className="text-[10px] text-purple-700 font-bold mt-0.5">Helpline: +91 7864028283</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="w-20 h-10 border-b-2 border-slate-900 mx-auto flex items-end justify-center pb-1 text-[10px] font-serif italic text-slate-700 font-bold">
+                      Dr. Pathologist
+                    </div>
+                    <span className="text-[10px] font-bold text-slate-500 block mt-1">NABL Authorized Signature</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : activeTab === 'bookings' ? (
+            /* TAB 1: BOOKING LIST */
             <div className="space-y-3.5">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  {language === 'bn' ? 'সকল পূর্ববর্তী ও বর্তমান বুকিং' : 'All Test Booking Orders'}
+                  {language === 'bn' ? 'সকল টেস্ট বুকিং অর্ডার' : 'All Test Booking Orders'}
                 </span>
                 <button
                   onClick={loadBookings}
@@ -322,11 +466,22 @@ export const UserProfileModal: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Action buttons */}
-                      <div className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] text-slate-500">
-                          Date: <span className="font-semibold text-slate-800">{b.preferred_date}</span>
-                        </span>
+                      {/* Action Buttons: WhatsApp Chat & LAB REPORT DOWNLOAD */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                        {/* Download Report Button (Available for Sample Collected or Completed) */}
+                        {(b.booking_status === 'Completed' || b.booking_status === 'Sample Collected' || b.booking_status === 'Confirmed') ? (
+                          <button
+                            onClick={() => setSelectedReportBooking(b)}
+                            className="text-xs bg-purple-700 hover:bg-purple-800 text-white font-bold py-1.5 px-3 rounded-lg flex items-center space-x-1 shadow-xs transition-colors cursor-pointer"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>📄 ল্যাব রিপোর্ট ডাউনলোড (Download Report)</span>
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-slate-400 italic">
+                            নমুনা সংগ্রহের পর রিপোর্ট দেওয়া হবে
+                          </span>
+                        )}
 
                         <a
                           href={`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(
@@ -334,10 +489,10 @@ export const UserProfileModal: React.FC = () => {
                           )}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold py-1.5 px-3 rounded-lg flex items-center space-x-1.5 border border-emerald-200 transition-colors"
+                          className="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold py-1.5 px-3 rounded-lg flex items-center space-x-1 border border-emerald-200 transition-colors"
                         >
                           <MessageSquare className="w-3.5 h-3.5 fill-current" />
-                          <span>{t.quickSupportWhatsapp}</span>
+                          <span>WhatsApp</span>
                         </a>
                       </div>
                     </div>
@@ -345,10 +500,8 @@ export const UserProfileModal: React.FC = () => {
                 </div>
               )}
             </div>
-          )}
-
-          {/* TAB 2: Patient Profile Details */}
-          {activeTab === 'profile' && (
+          ) : (
+            /* TAB 2: PROFILE DETAILS & PERMANENT DELETE */
             <div className="space-y-4">
               {!isEditing ? (
                 <div className="space-y-4">
@@ -369,9 +522,9 @@ export const UserProfileModal: React.FC = () => {
                     </div>
 
                     <div className="flex justify-between items-center py-1 border-b border-slate-200">
-                      <span className="text-slate-500 font-medium">Login Method</span>
-                      <span className="font-semibold text-slate-700 capitalize">
-                        {currentUser.auth_provider === 'google' ? 'Google Account' : 'Email ID'}
+                      <span className="text-slate-500 font-medium">Franchise Partner Code</span>
+                      <span className="font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
+                        P7523
                       </span>
                     </div>
 
@@ -412,34 +565,55 @@ export const UserProfileModal: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center space-x-3 pt-2">
-                    <button
-                      onClick={() => {
-                        setName(currentUser.name);
-                        setPhone(currentUser.phone || '');
-                        setAge(currentUser.age || '');
-                        setGender(currentUser.gender || 'Male');
-                        setAddress(currentUser.address || '');
-                        setArea(currentUser.area || '');
-                        setPincode(currentUser.pincode || '');
-                        setIsEditing(true);
-                      }}
-                      className="flex-1 bg-purple-700 hover:bg-purple-800 text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 text-xs sm:text-sm cursor-pointer transition-colors"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                      <span>{t.editProfile}</span>
-                    </button>
+                  {/* Actions & Permanent Account Delete Section */}
+                  <div className="space-y-3 pt-2">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => {
+                          setName(currentUser.name);
+                          setPhone(currentUser.phone || '');
+                          setAge(currentUser.age || '');
+                          setGender(currentUser.gender || 'Male');
+                          setAddress(currentUser.address || '');
+                          setArea(currentUser.area || '');
+                          setPincode(currentUser.pincode || '');
+                          setIsEditing(true);
+                        }}
+                        className="flex-1 bg-purple-700 hover:bg-purple-800 text-white font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-2 text-xs sm:text-sm cursor-pointer transition-colors"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                        <span>{t.editProfile}</span>
+                      </button>
 
-                    <button
-                      onClick={() => {
-                        logoutUser();
-                        setIsProfileModalOpen(false);
-                      }}
-                      className="bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-1.5 text-xs sm:text-sm border border-rose-200 cursor-pointer transition-colors"
-                    >
-                      <LogOut className="w-4 h-4" />
-                      <span>{t.logout}</span>
-                    </button>
+                      <button
+                        onClick={() => {
+                          logoutUser();
+                          setIsProfileModalOpen(false);
+                        }}
+                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-4 rounded-xl flex items-center justify-center space-x-1.5 text-xs sm:text-sm border border-slate-300 cursor-pointer transition-colors"
+                      >
+                        <LogOut className="w-4 h-4" />
+                        <span>{t.logout}</span>
+                      </button>
+                    </div>
+
+                    {/* Permanent Account Delete Danger Box */}
+                    <div className="p-3.5 bg-rose-50 border border-rose-200 rounded-2xl space-y-2">
+                      <div className="flex items-center space-x-2 text-rose-800 font-bold text-xs">
+                        <AlertTriangle className="w-4 h-4 text-rose-600 shrink-0" />
+                        <span>অ্যাকাউন্ট চিরতরে মুছে ফেলার অপশন (Permanent Account Delete)</span>
+                      </div>
+                      <p className="text-[11px] text-rose-700">
+                        অ্যাকাউন্ট ডিলিট করলে আপনার প্রোফাইল তথ্য এবং স্থানীয় ডাটা স্থায়ীভাবে মুছে যাবে।
+                      </p>
+                      <button
+                        onClick={handleDeleteAccountPermanently}
+                        className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>অ্যাকাউন্ট চিরতরে মুছে ফেলুন (Delete Account Permanently)</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ) : (

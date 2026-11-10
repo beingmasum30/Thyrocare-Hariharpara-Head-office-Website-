@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../context/AppContext';
+import { ScrollReveal } from './ScrollReveal';
 import { 
   Activity, 
   Droplet, 
@@ -112,21 +113,22 @@ export const HealthConcerns: React.FC = () => {
 
       {/* Horizontal Scroll / Grid of Concerns */}
       <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-9 gap-3">
-        {concerns.map((c) => {
+        {concerns.map((c, idx) => {
           const Icon = c.icon;
           return (
-            <div
-              key={c.id}
-              onClick={() => handleSelectConcern(c.query)}
-              className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-[#e23744]/40 transition-all flex flex-col items-center justify-center text-center cursor-pointer group active:scale-95"
-            >
-              <div className={`w-12 h-12 rounded-xl ${c.color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform border`}>
-                <Icon className="w-6 h-6" />
+            <ScrollReveal key={c.id} animation="fade-up" delay={idx * 50}>
+              <div
+                onClick={() => handleSelectConcern(c.query)}
+                className="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200/90 shadow-2xs hover:shadow-md hover:border-[#e23744]/40 transition-all flex flex-col items-center justify-center text-center cursor-pointer group active:scale-95 h-full"
+              >
+                <div className={`w-12 h-12 rounded-xl ${c.color} flex items-center justify-center mb-2 group-hover:scale-110 transition-transform border`}>
+                  <Icon className="w-6 h-6" />
+                </div>
+                <span className="text-xs font-bold text-slate-800 group-hover:text-[#e23744] transition-colors leading-tight">
+                  {c.name}
+                </span>
               </div>
-              <span className="text-xs font-bold text-slate-800 group-hover:text-[#e23744] transition-colors leading-tight">
-                {c.name}
-              </span>
-            </div>
+            </ScrollReveal>
           );
         })}
       </div>

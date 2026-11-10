@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Product, CartItem, Language, Booking, UserProfile } from '../types';
 import { translations } from '../utils/translations';
 import { dbService } from '../services/db';
+import { firestoreService } from '../services/firebase';
 import { HariharparaVillage, DEFAULT_VILLAGE, getVillageById, saveCustomVillage } from '../data/hariharparaLocations';
 
 interface AppContextType {
@@ -234,7 +235,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
 
-  // Products
+  // Products & Firestore Real-time Sync
   const [products, setProducts] = useState<Product[]>([]);
   const [isLoadingProducts, setIsLoadingProducts] = useState(true);
 
@@ -252,6 +253,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     reloadProducts();
+
+    // Subscribe to Firestore Realtime product changes
+    const unsubscribe = firestoreService.subscribeProducts((liveProducts: Product[]) => {
+      if (liveProducts && liveProducts.length > 0) {
+        setProducts(liveProducts);
+      }
+    });
+
+    return () => unsubscribe();
   }, []);
 
   // Cart

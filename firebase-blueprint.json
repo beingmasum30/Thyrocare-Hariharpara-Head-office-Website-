@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "Booking": {
+      "title": "Booking",
+      "description": "Patient diagnostic test booking record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "patient_name": { "type": "string", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 20 },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "address": { "type": "string", "maxLength": 1000 },
+        "area": { "type": "string", "maxLength": 200 },
+        "pincode": { "type": "string", "maxLength": 10 },
+        "collection_type": { "type": "string", "enum": ["Home Sample Collection", "Thyrocare Centre Visit"] },
+        "preferred_date": { "type": "string", "maxLength": 50 },
+        "items": { "type": "array" },
+        "total_mrp": { "type": "number" },
+        "discount_amount": { "type": "number" },
+        "final_total": { "type": "number" },
+        "booking_status": { "type": "string", "enum": ["Pending", "Contacted", "Confirmed", "Sample Collected", "Completed", "Cancelled"] },
+        "created_at": { "type": "string", "maxLength": 100 },
+        "user_email": { "type": "string", "maxLength": 200 },
+        "maps_link": { "type": "string", "maxLength": 500 },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "gps_accuracy": { "type": "number" }
+      },
+      "required": ["id", "patient_name", "phone", "collection_type", "preferred_date", "final_total", "booking_status"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Diagnostic test or health package in catalogue",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "test_code": { "type": "string", "maxLength": 50 },
+        "name": { "type": "string", "maxLength": 300 },
+        "name_bn": { "type": "string", "maxLength": 300 },
+        "category": { "type": "string" },
+        "mrp": { "type": "number" },
+        "discount_type": { "type": "string" },
+        "discount_value": { "type": "number" },
+        "final_price": { "type": "number" },
+        "description": { "type": "string", "maxLength": 2000 },
+        "is_popular": { "type": "boolean" },
+        "is_active": { "type": "boolean" }
+      },
+      "required": ["id", "test_code", "name", "mrp", "final_price"]
+    }
+  },
+  "firestore": {
+    "/bookings/{bookingId}": {
+      "schema": { "$ref": "#/entities/Booking" },
+      "description": "Collection of patient test bookings"
+    },
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Collection of diagnostic tests and packages"
+    }
+  }
+}
