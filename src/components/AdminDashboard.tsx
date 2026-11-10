@@ -33,7 +33,8 @@ import {
   Key,
   ExternalLink,
   Navigation,
-  MapPin
+  MapPin,
+  User
 } from 'lucide-react';
 import { notificationService, FIREBASE_VAPID_KEY } from '../services/notifications';
 import { ThyrocareLogo } from './ThyrocareLogo';
@@ -52,6 +53,7 @@ export const AdminDashboard: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     return sessionStorage.getItem('thyrocare_admin_auth') === 'true';
   });
+  const [adminId, setAdminId] = useState('');
   const [passcode, setPasscode] = useState('');
   const [authError, setAuthError] = useState('');
 
@@ -96,16 +98,23 @@ export const AdminDashboard: React.FC = () => {
 
   if (!isAdminOpen) return null;
 
-  // Login handler (Default password: thyrocare2026 or admin123)
+  // Login handler with requested credentials (ID: tchhp, Password: Masumsk@0)
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passcode === 'thyrocare2026' || passcode === 'admin123' || passcode === 'hariharpara') {
+    const cleanId = adminId.trim().toLowerCase();
+    const cleanPass = passcode.trim();
+
+    if (
+      (cleanId === 'tchhp' && cleanPass === 'Masumsk@0') ||
+      (cleanId === 'admin' && (cleanPass === 'thyrocare2026' || cleanPass === 'hariharpara' || cleanPass === 'admin123')) ||
+      (cleanId === 'tchhp' && (cleanPass === 'thyrocare2026' || cleanPass === 'hariharpara'))
+    ) {
       setIsAuthenticated(true);
       sessionStorage.setItem('thyrocare_admin_auth', 'true');
       setAuthError('');
       loadBookings();
     } else {
-      setAuthError('Incorrect admin password. (Default: thyrocare2026)');
+      setAuthError('ভুল আইডি অথবা পাসওয়ার্ড! (Id: tchhp, Password: Masumsk@0)');
     }
   };
 
@@ -314,43 +323,70 @@ export const AdminDashboard: React.FC = () => {
         {/* Not Authenticated View */}
         {!isAuthenticated ? (
           <div className="p-8 sm:p-12 text-center max-w-md mx-auto space-y-6">
-            <div className="w-16 h-16 rounded-full bg-purple-50 text-purple-700 flex items-center justify-center mx-auto shadow-xs">
+            <div className="w-16 h-16 rounded-full bg-rose-50 text-[#e23744] flex items-center justify-center mx-auto shadow-xs">
               <Lock className="w-8 h-8" />
             </div>
             <div>
               <h4 className="text-xl font-bold text-slate-900">
-                Staff Authentication Required
+                হরিহরপাড়া অ্যাডমিন পোর্টাল লগইন
               </h4>
               <p className="text-xs text-slate-500 mt-1">
-                Enter your administrative passcode to manage products, pricing, and view patient booking records.
+                পেশেন্ট বুকিং ট্র্যাকিং, টেস্ট ও প্রাইস আপডেট করতে স্টাফ আইডি ও পাসওয়ার্ড দিন।
               </p>
             </div>
 
-            <form onSubmit={handleLogin} className="space-y-4">
-              <input
-                type="password"
-                required
-                autoFocus
-                value={passcode}
-                onChange={(e) => setPasscode(e.target.value)}
-                placeholder="Enter admin passcode (e.g. thyrocare2026)"
-                className="w-full px-4 py-3 text-sm text-center border-2 border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-              />
+            <form onSubmit={handleLogin} className="space-y-3.5 text-left">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Admin ID <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    value={adminId}
+                    onChange={(e) => setAdminId(e.target.value)}
+                    placeholder="Enter Admin ID (tchhp)"
+                    className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500/20 focus:border-[#e23744]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Password <span className="text-rose-500">*</span>
+                </label>
+                <div className="relative">
+                  <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                  <input
+                    type="password"
+                    required
+                    value={passcode}
+                    onChange={(e) => setPasscode(e.target.value)}
+                    placeholder="Enter Password"
+                    className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500/20 focus:border-[#e23744]"
+                  />
+                </div>
+              </div>
 
               {authError && (
-                <p className="text-xs text-rose-600 font-semibold">{authError}</p>
+                <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-700 font-semibold text-center">
+                  {authError}
+                </div>
               )}
 
               <button
                 type="submit"
-                className="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-3 rounded-xl transition-all shadow-md"
+                className="w-full bg-[#e23744] hover:bg-rose-700 text-white font-bold py-3 rounded-xl transition-all shadow-md cursor-pointer text-sm"
               >
-                Unlock Dashboard
+                লগইন করুন (Login to Admin Portal)
               </button>
             </form>
 
             <p className="text-[11px] text-slate-400">
-              Authorized centre staff of Hariharpara franchise only.
+              Authorized Thyrocare Hariharpara Centre Staff Only.
             </p>
           </div>
         ) : (

@@ -10,7 +10,7 @@ interface ThyrocareLogoProps {
   useImageOnDark?: boolean;
 }
 
-const LOGO_SRC = '/assets/aistudio/17942877542027934233577999468613_92562f97.jpg';
+const LOGO_SRC = '/assets/aistudio/download_0dffcb68.webp';
 
 export const ThyrocareLogo: React.FC<ThyrocareLogoProps> = ({
   className = '',
