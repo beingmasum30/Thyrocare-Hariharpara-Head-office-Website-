@@ -1,0 +1,249 @@
+import React, { useState, useMemo } from 'react';
+import { useApp } from '../context/AppContext';
+import { ProductCard } from './ProductCard';
+import { 
+  Search, 
+  X, 
+  Filter, 
+  SlidersHorizontal, 
+  Sparkles, 
+  Activity, 
+  PackageCheck, 
+  FileText 
+} from 'lucide-react';
+
+export const CatalogueSection: React.FC = () => {
+  const { 
+    products, 
+    isLoadingProducts, 
+    language, 
+    t, 
+    searchQuery, 
+    setSearchQuery,
+    selectedCategory,
+    setSelectedCategory 
+  } = useApp();
+
+  const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'alpha'>('featured');
+
+  // Filter & Search Logic
+  const filteredProducts = useMemo(() => {
+    let result = products.filter(p => p.is_active !== false);
+
+    // Category filter
+    if (selectedCategory === 'package') {
+      result = result.filter(p => p.category === 'package');
+    } else if (selectedCategory === 'profile') {
+      result = result.filter(p => p.category === 'profile');
+    } else if (selectedCategory === 'test') {
+      result = result.filter(p => p.category === 'test');
+    } else if (selectedCategory === 'popular') {
+      result = result.filter(p => p.is_popular);
+    }
+
+    // Search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(q) ||
+        (p.name_bn && p.name_bn.toLowerCase().includes(q)) ||
+        p.test_code.toLowerCase().includes(q) ||
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        (p.included_tests && p.included_tests.some(t => t.toLowerCase().includes(q)))
+      );
+    }
+
+    // Sort
+    if (sortBy === 'price-asc') {
+      result.sort((a, b) => a.final_price - b.final_price);
+    } else if (sortBy === 'price-desc') {
+      result.sort((a, b) => b.final_price - a.final_price);
+    } else if (sortBy === 'alpha') {
+      result.sort((a, b) => a.name.localeCompare(b.name));
+    } else {
+      // featured: popular first, then packages, then profiles, then tests
+      result.sort((a, b) => {
+        if (a.is_popular && !b.is_popular) return -1;
+        if (!a.is_popular && b.is_popular) return 1;
+        return 0;
+      });
+    }
+
+    return result;
+  }, [products, selectedCategory, searchQuery, sortBy]);
+
+  return (
+    <section id="catalog" className="py-12 sm:py-16 bg-slate-50/70 border-b border-slate-200/70">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Title and Search Header */}
+        <div className="max-w-3xl mx-auto text-center mb-8 space-y-3">
+          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+            {language === 'bn' ? 'সকল ডায়াগনস্টিক টেস্ট ও হেলথ প্যাকেজ' : 'All Diagnostic Tests & Health Packages'}
+          </h2>
+          <p className="text-sm sm:text-base text-slate-600">
+            {language === 'bn' 
+              ? 'টেস্টের নাম বা কোড দিয়ে সার্চ করুন এবং সহজেই হরিহরপাড়ায় হোম কালেকশনের জন্য বুক করুন।'
+              : 'Search by test name, package name, or Thyrocare code to find exactly what your doctor prescribed.'}
+          </p>
+
+          {/* Search Bar Input */}
+          <div className="relative pt-2">
+            <div className="relative flex items-center shadow-lg rounded-2xl bg-white border-2 border-purple-200/90 focus-within:border-purple-600 focus-within:ring-4 focus-within:ring-purple-500/10 transition-all">
+              <Search className="w-5 h-5 text-purple-600 ml-4 shrink-0" />
+              <input
+                id="search-tests-input"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t.searchPlaceholder}
+                className="w-full py-3.5 pl-3 pr-10 text-sm sm:text-base text-slate-900 placeholder-slate-400 focus:outline-hidden bg-transparent rounded-2xl"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="p-2 text-slate-400 hover:text-slate-600 mr-2"
+                  title="Clear search"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Chips & Sort Controls */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 pt-2">
+          
+          {/* Category Filters */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              onClick={() => setSelectedCategory('all')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                selectedCategory === 'all'
+                  ? 'bg-[#e23744] text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              {t.filterAll}
+            </button>
+
+            <button
+              onClick={() => setSelectedCategory('popular')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1 cursor-pointer ${
+                selectedCategory === 'popular'
+                  ? 'bg-[#e23744] text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>{t.filterPopular}</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedCategory('package')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1 cursor-pointer ${
+                selectedCategory === 'package'
+                  ? 'bg-[#e23744] text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <PackageCheck className="w-3.5 h-3.5" />
+              <span>{t.filterPackages}</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedCategory('profile')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1 cursor-pointer ${
+                selectedCategory === 'profile'
+                  ? 'bg-[#e23744] text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <Activity className="w-3.5 h-3.5" />
+              <span>{t.filterProfiles}</span>
+            </button>
+
+            <button
+              onClick={() => setSelectedCategory('test')}
+              className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1 cursor-pointer ${
+                selectedCategory === 'test'
+                  ? 'bg-[#e23744] text-white shadow-xs'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>{t.filterTests}</span>
+            </button>
+          </div>
+
+          {/* Sort Dropdown & Count */}
+          <div className="flex items-center space-x-3 w-full sm:w-auto justify-between sm:justify-end">
+            <span className="text-xs text-slate-500 font-medium">
+              <strong className="text-slate-900">{filteredProducts.length}</strong> {t.productsFound}
+            </span>
+
+            <div className="flex items-center space-x-1.5 bg-white border border-slate-200 rounded-xl px-2.5 py-1.5 shadow-xs">
+              <SlidersHorizontal className="w-3.5 h-3.5 text-slate-500" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+                className="text-xs font-semibold text-slate-700 bg-transparent focus:outline-hidden cursor-pointer"
+              >
+                <option value="featured">{t.sortFeatured}</option>
+                <option value="price-asc">{t.sortPriceLowHigh}</option>
+                <option value="price-desc">{t.sortPriceHighLow}</option>
+                <option value="alpha">{t.sortAlphabetical}</option>
+              </select>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Loading State */}
+        {isLoadingProducts && (
+          <div className="py-20 text-center">
+            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-600 border-t-transparent" />
+            <p className="mt-3 text-sm text-slate-600 font-medium">Loading catalogue...</p>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {!isLoadingProducts && filteredProducts.length === 0 && (
+          <div className="bg-white rounded-3xl p-10 text-center border border-slate-200 max-w-lg mx-auto space-y-4 my-8">
+            <div className="w-16 h-16 rounded-full bg-purple-50 text-purple-600 flex items-center justify-center mx-auto">
+              <Search className="w-8 h-8" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900">
+              {language === 'bn' ? 'কোনো টেস্ট পাওয়া যায়নি' : 'No tests found'}
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500">
+              {t.noProductsFound}
+            </p>
+            <div className="pt-2 flex justify-center space-x-3">
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('all');
+                }}
+                className="text-xs font-bold bg-purple-50 text-purple-700 px-4 py-2 rounded-xl hover:bg-purple-100"
+              >
+                {language === 'bn' ? 'ফিল্টার রিসেট করুন' : 'Reset Filters'}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Products Grid */}
+        {!isLoadingProducts && filteredProducts.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+            {filteredProducts.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
+
+      </div>
+    </section>
+  );
+};

@@ -1,0 +1,6 @@
+{
+  "name": "Thyrocare Hariharpara",
+  "description": "Diagnostic test booking & home sample collection service in Hariharpara, Murshidabad. Book blood tests and health checkup packages easily via WhatsApp.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
