@@ -60,11 +60,12 @@ export const ThyrocareLogo: React.FC<ThyrocareLogoProps> = ({
     };
   }, [isDark]);
 
-  // Height configurations tailored for vertical logo + subtitle stacking
+  // Height configurations tailored for vertical logo + subtitle stacking:
+  // Logo is made bigger, and Hariharpara centre text is made smaller and ultra clean
   const heights = {
-    sm: 'h-5 sm:h-6',
-    md: 'h-6 sm:h-7',
-    lg: 'h-8 sm:h-10'
+    sm: 'h-6 sm:h-7',
+    md: 'h-8 sm:h-9 md:h-9.5',
+    lg: 'h-11 sm:h-13'
   }[size];
 
   // ================= 1. DARK THEME (Footer & Admin Header) =================
@@ -74,15 +75,15 @@ export const ThyrocareLogo: React.FC<ThyrocareLogoProps> = ({
         <img
           src={LOGO_SRC}
           alt="Thyrocare"
-          className={`${heights} w-auto max-w-[130px] sm:max-w-[160px] object-contain rounded-md`}
+          className={`${heights} w-auto max-w-[155px] sm:max-w-[195px] object-contain rounded-md`}
           loading="eager"
         />
         {showBranch && (
           <div className="flex items-center space-x-1 pl-0.5 mt-0.5">
-            <span className="font-black text-[9px] sm:text-[10px] uppercase tracking-[0.22em] text-rose-400">
+            <span className="font-extrabold text-[7px] sm:text-[7.5px] uppercase tracking-[0.16em] text-rose-400">
               HARIHARPARA
             </span>
-            <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">
+            <span className="text-[6px] sm:text-[6.5px] text-slate-400 font-semibold uppercase tracking-wider">
               CENTRE
             </span>
           </div>
@@ -92,7 +93,7 @@ export const ThyrocareLogo: React.FC<ThyrocareLogoProps> = ({
   }
 
   // ================= 2. LIGHT THEME (White Navbar & Cards) =================
-  // Directly underneath the Thyrocare logo: clean, small, bold "HARIHARPARA"
+  // Logo is bigger, and Hariharpara text is smaller and tucked neatly underneath
   return (
     <div className={`flex flex-col items-start select-none min-w-0 bg-transparent justify-center ${className}`}>
       
@@ -102,13 +103,13 @@ export const ThyrocareLogo: React.FC<ThyrocareLogoProps> = ({
           <img
             src={whiteBgLogoUrl}
             alt="Thyrocare"
-            className={`${heights} w-auto max-w-[125px] sm:max-w-[155px] object-contain drop-shadow-2xs`}
+            className={`${heights} w-auto max-w-[150px] sm:max-w-[190px] object-contain drop-shadow-2xs`}
             loading="eager"
           />
         ) : (
           <div className="flex items-center space-x-1.5">
             {/* Droplet + Microscope icon */}
-            <div className="w-6 h-6 sm:w-7 sm:h-7 relative shrink-0">
+            <div className="w-7 h-7 sm:w-8 sm:h-8 relative shrink-0">
               <svg viewBox="0 0 100 100" className="w-full h-full" fill="none">
                 <path
                   d="M 50 14 C 44 26 28 47 28 62 C 28 67 30 72 34 76 L 41 68 C 39 65 38 62 38 59 C 38 49 47 34 50 29 C 53 34 62 49 62 59 C 62 62 61 65 59 68 L 66 76 C 70 72 72 67 72 62 C 72 47 56 26 50 14 Z"
@@ -130,10 +131,10 @@ export const ThyrocareLogo: React.FC<ThyrocareLogoProps> = ({
 
             {/* Typography */}
             <div className="flex items-baseline leading-none">
-              <span className="font-black text-lg sm:text-xl font-serif text-[#1e293b] tracking-tight">
+              <span className="font-black text-xl sm:text-2xl font-serif text-[#1e293b] tracking-tight">
                 Thyro
               </span>
-              <span className="font-black text-lg sm:text-xl font-sans text-[#f05046] tracking-tight ml-0.5">
+              <span className="font-black text-xl sm:text-2xl font-sans text-[#f05046] tracking-tight ml-0.5">
                 care
               </span>
             </div>
@@ -141,20 +142,20 @@ export const ThyrocareLogo: React.FC<ThyrocareLogoProps> = ({
         )}
       </div>
 
-      {/* Lower: "HARIHARPARA" written neatly directly underneath the logo */}
+      {/* Lower: "HARIHARPARA" written neatly and smaller directly underneath */}
       {showBranch && (
-        <div className="flex items-center space-x-1 pl-1 -mt-0.5 sm:-mt-1">
-          <span className="font-black text-[9px] sm:text-[10px] uppercase tracking-[0.2em] text-[#e23744]">
+        <div className="flex items-center space-x-1 pl-0.5 -mt-0.5">
+          <span className="font-extrabold text-[7px] sm:text-[7.5px] uppercase tracking-[0.16em] text-[#e23744]">
             HARIHARPARA
           </span>
-          <span className="text-[7.5px] sm:text-[8px] font-bold text-slate-500 uppercase tracking-wider">
+          <span className="text-[6px] sm:text-[6.5px] font-semibold text-slate-400 uppercase tracking-wider">
             CENTRE
           </span>
         </div>
       )}
 
       {showTagline && (
-        <span className="text-[8px] text-slate-400 font-medium pl-1">
+        <span className="text-[7.5px] text-slate-400 font-medium pl-0.5">
           Tests you can trust
         </span>
       )}

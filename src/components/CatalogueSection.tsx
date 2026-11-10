@@ -26,11 +26,56 @@ export const CatalogueSection: React.FC = () => {
 
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'alpha'>('featured');
 
-  // Filter & Search Logic
+  // Enhanced Filter & Search Logic
   const filteredProducts = useMemo(() => {
-    let result = products.filter(p => p.is_active !== false);
+    const active = products.filter(p => p.is_active !== false);
 
-    // Category filter
+    // If search query is present, match across all active products
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      let matches = active.filter(p => 
+        p.name.toLowerCase().includes(q) ||
+        (p.name_bn && p.name_bn.toLowerCase().includes(q)) ||
+        p.test_code.toLowerCase().includes(q) ||
+        (p.description && p.description.toLowerCase().includes(q)) ||
+        (p.included_tests && p.included_tests.some(t => t.toLowerCase().includes(q)))
+      );
+
+      // If user selected a specific category, filter within category if matches exist
+      if (selectedCategory !== 'all') {
+        const inCategory = matches.filter(p => {
+          if (selectedCategory === 'package') return p.category === 'package';
+          if (selectedCategory === 'profile') return p.category === 'profile';
+          if (selectedCategory === 'test') return p.category === 'test';
+          if (selectedCategory === 'popular') return p.is_popular;
+          return true;
+        });
+        if (inCategory.length > 0) {
+          matches = inCategory;
+        }
+      }
+
+      // Sort
+      if (sortBy === 'price-asc') {
+        matches.sort((a, b) => a.final_price - b.final_price);
+      } else if (sortBy === 'price-desc') {
+        matches.sort((a, b) => b.final_price - a.final_price);
+      } else if (sortBy === 'alpha') {
+        matches.sort((a, b) => a.name.localeCompare(b.name));
+      } else {
+        matches.sort((a, b) => {
+          if (a.is_popular && !b.is_popular) return -1;
+          if (!a.is_popular && b.is_popular) return 1;
+          return 0;
+        });
+      }
+
+      return matches;
+    }
+
+    let result = [...active];
+
+    // Category filter when no search query
     if (selectedCategory === 'package') {
       result = result.filter(p => p.category === 'package');
     } else if (selectedCategory === 'profile') {
@@ -41,18 +86,6 @@ export const CatalogueSection: React.FC = () => {
       result = result.filter(p => p.is_popular);
     }
 
-    // Search query
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      result = result.filter(p => 
-        p.name.toLowerCase().includes(q) ||
-        (p.name_bn && p.name_bn.toLowerCase().includes(q)) ||
-        p.test_code.toLowerCase().includes(q) ||
-        (p.description && p.description.toLowerCase().includes(q)) ||
-        (p.included_tests && p.included_tests.some(t => t.toLowerCase().includes(q)))
-      );
-    }
-
     // Sort
     if (sortBy === 'price-asc') {
       result.sort((a, b) => a.final_price - b.final_price);
@@ -61,7 +94,6 @@ export const CatalogueSection: React.FC = () => {
     } else if (sortBy === 'alpha') {
       result.sort((a, b) => a.name.localeCompare(b.name));
     } else {
-      // featured: popular first, then packages, then profiles, then tests
       result.sort((a, b) => {
         if (a.is_popular && !b.is_popular) return -1;
         if (!a.is_popular && b.is_popular) return 1;
@@ -102,13 +134,32 @@ export const CatalogueSection: React.FC = () => {
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="p-2 text-slate-400 hover:text-slate-600 mr-2"
+                  className="p-2 text-slate-400 hover:text-slate-600 mr-2 cursor-pointer"
                   title="Clear search"
                 >
                   <X className="w-5 h-5" />
                 </button>
               )}
             </div>
+
+            {/* Active Search Results Banner */}
+            {searchQuery && (
+              <div className="mt-3 p-3 bg-white border border-rose-200 rounded-2xl flex items-center justify-between flex-wrap gap-2 shadow-2xs">
+                <div className="flex items-center space-x-2 text-xs text-slate-800">
+                  <span className="font-bold text-[#e23744]">
+                    {language === 'bn'
+                      ? `"${searchQuery}" এর জন্য ${filteredProducts.length} টি টেস্ট ও প্যাকেজ পাওয়া গেছে`
+                      : `Found ${filteredProducts.length} tests matching "${searchQuery}"`}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-xs text-[#e23744] hover:underline font-bold cursor-pointer"
+                >
+                  {language === 'bn' ? 'সার্চ রিসেট করুন' : 'Clear search'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -220,15 +271,29 @@ export const CatalogueSection: React.FC = () => {
             <p className="text-xs sm:text-sm text-slate-500">
               {t.noProductsFound}
             </p>
-            <div className="pt-2 flex justify-center space-x-3">
+            <div className="pt-2 flex flex-col items-center space-y-3">
+              <div className="flex flex-wrap justify-center gap-2">
+                {['CBC', 'Thyroid', 'Lipid', 'HbA1c', 'Liver LFT', 'Aarogyam 1.3'].map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => {
+                      setSearchQuery(item);
+                      setSelectedCategory('all');
+                    }}
+                    className="px-2.5 py-1 bg-slate-100 hover:bg-rose-50 text-slate-700 hover:text-[#e23744] text-xs font-semibold rounded-lg border border-slate-200 transition-colors cursor-pointer"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
               <button
                 onClick={() => {
                   setSearchQuery('');
                   setSelectedCategory('all');
                 }}
-                className="text-xs font-bold bg-purple-50 text-purple-700 px-4 py-2 rounded-xl hover:bg-purple-100"
+                className="text-xs font-bold bg-[#e23744] text-white px-4 py-2 rounded-xl hover:bg-rose-700 transition-colors cursor-pointer shadow-xs"
               >
-                {language === 'bn' ? 'ফিল্টার রিসেট করুন' : 'Reset Filters'}
+                {language === 'bn' ? 'সকল টেস্ট দেখুন' : 'Show All Tests'}
               </button>
             </div>
           </div>
