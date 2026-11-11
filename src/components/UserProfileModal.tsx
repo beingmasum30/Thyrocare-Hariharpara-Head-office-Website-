@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { dbService } from '../services/db';
+import { firestoreService } from '../services/firebase';
 import { Booking, BookingStatus } from '../types';
 import { formatCurrency } from '../utils/pricing';
 import { WHATSAPP_PHONE } from '../utils/whatsapp';
@@ -20,6 +21,7 @@ import {
   Home, 
   Building2,
   Download,
+  ExternalLink,
   Trash2,
   AlertTriangle,
   Award,
@@ -58,9 +60,10 @@ export const UserProfileModal: React.FC = () => {
 
   // Selected Booking for Report Preview
   const [selectedReportBooking, setSelectedReportBooking] = useState<Booking | null>(null);
+  const [confirmDeleteAccount, setConfirmDeleteAccount] = useState(false);
 
   useEffect(() => {
-    if (currentUser) {
+    if (currentUser && isProfileModalOpen) {
       setName(currentUser.name);
       setPhone(currentUser.phone || '');
       setAge(currentUser.age || '');
@@ -68,7 +71,26 @@ export const UserProfileModal: React.FC = () => {
       setAddress(currentUser.address || '');
       setArea(currentUser.area || '');
       setPincode(currentUser.pincode || '');
+      setConfirmDeleteAccount(false);
       loadBookings();
+
+      const unsubscribe = firestoreService.subscribeBookings((allLiveBookings) => {
+        if (allLiveBookings && currentUser) {
+          const cleanPhone = currentUser.phone?.replace(/\D/g, '');
+          const cleanEmail = currentUser.email?.trim().toLowerCase();
+          const matched = allLiveBookings.filter(b => {
+            const matchUser = Boolean(currentUser.id && b.user_id === currentUser.id);
+            const matchEmail = Boolean(cleanEmail && b.user_email && b.user_email.trim().toLowerCase() === cleanEmail);
+            const matchPhone = Boolean(cleanPhone && b.phone && b.phone.replace(/\D/g, '') === cleanPhone);
+            return matchUser || matchEmail || matchPhone;
+          });
+          if (matched.length > 0) {
+            setUserBookings(matched);
+          }
+        }
+      });
+
+      return () => unsubscribe();
     }
   }, [currentUser, isProfileModalOpen]);
 
@@ -87,6 +109,16 @@ export const UserProfileModal: React.FC = () => {
     } finally {
       setIsLoadingBookings(false);
     }
+  };
+
+  // Convert Google Drive view URL to direct download link if applicable
+  const getDirectDriveDownloadUrl = (url: string): string => {
+    const clean = url.trim();
+    const match = clean.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || clean.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (match && match[1]) {
+      return `https://drive.google.com/uc?export=download&id=${match[1]}`;
+    }
+    return clean;
   };
 
   if (!isProfileModalOpen || !currentUser) return null;
@@ -119,16 +151,16 @@ export const UserProfileModal: React.FC = () => {
     }
   };
 
-  // Permanent Account Deletion
-  const handleDeleteAccountPermanently = () => {
-    if (window.confirm('আপনি কি নিশ্চিত যে আপনার অ্যাকাউন্টটি চিরতরে মুছে ফেলতে চান? আপনার সমস্ত প্রোফাইল ডাটা মুছে যাবে। (Are you sure you want to permanently delete your account?)')) {
-      logoutUser();
-      localStorage.removeItem('thyrocare_user');
-      localStorage.removeItem('thyrocare_cart');
-      sessionStorage.clear();
-      setIsProfileModalOpen(false);
-      showNotification('আপনার অ্যাকাউন্ট ও সমস্ত ডাটা সফলভাবে চিরতরে মুছে ফেলা হয়েছে।', 'info');
-    }
+  // Permanent Account Deletion (deletes from Firestore and LocalStorage so unregistered login is blocked)
+  const handleDeleteAccountPermanently = async () => {
+    await dbService.deleteUserProfile(currentUser.id, currentUser.email);
+    logoutUser();
+    localStorage.removeItem('thyrocare_user');
+    localStorage.removeItem('thyrocare_cart');
+    sessionStorage.clear();
+    setConfirmDeleteAccount(false);
+    setIsProfileModalOpen(false);
+    showNotification('আপনার ইউজার আইডি ও সমস্ত ডাটা চিরতরে মুছে ফেলা হয়েছে। পুনরায় লগইন করতে নতুন করে রেজিস্ট্রেশন করতে হবে।', 'info');
   };
 
   const handlePrintReport = () => {
@@ -466,21 +498,43 @@ export const UserProfileModal: React.FC = () => {
                         </div>
                       </div>
 
-                      {/* Action Buttons: WhatsApp Chat & LAB REPORT DOWNLOAD */}
-                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                        {/* Download Report Button (Available for Sample Collected or Completed) */}
-                        {(b.booking_status === 'Completed' || b.booking_status === 'Sample Collected' || b.booking_status === 'Confirmed') ? (
-                          <button
-                            onClick={() => setSelectedReportBooking(b)}
-                            className="text-xs bg-purple-700 hover:bg-purple-800 text-white font-bold py-1.5 px-3 rounded-lg flex items-center space-x-1 shadow-xs transition-colors cursor-pointer"
-                          >
-                            <Download className="w-3.5 h-3.5" />
-                            <span>📄 ল্যাব রিপোর্ট ডাউনলোড (Download Report)</span>
-                          </button>
+                      {/* Action Buttons: LAB REPORT DOWNLOAD (Strictly when Admin provides Drive Link) & WhatsApp Chat */}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-1.5 border-t border-slate-100">
+                        {b.report_drive_link && b.report_drive_link.trim() !== '' ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <a
+                              href={getDirectDriveDownloadUrl(b.report_drive_link)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold py-2 px-3.5 rounded-xl flex items-center space-x-1.5 shadow-xs transition-all cursor-pointer"
+                            >
+                              <Download className="w-3.5 h-3.5" />
+                              <span>
+                                {language === 'bn'
+                                  ? '📄 ল্যাব রিপোর্ট ডাউনলোড করুন (Download Report)'
+                                  : '📄 Download Lab Report'}
+                              </span>
+                            </a>
+
+                            <a
+                              href={b.report_drive_link.trim()}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs bg-purple-50 hover:bg-purple-100 text-purple-800 font-bold py-2 px-3 rounded-xl flex items-center space-x-1 border border-purple-200 transition-colors"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5" />
+                              <span>{language === 'bn' ? 'ড্রাইভে দেখুন' : 'Open Drive'}</span>
+                            </a>
+                          </div>
                         ) : (
-                          <span className="text-[11px] text-slate-400 italic">
-                            নমুনা সংগ্রহের পর রিপোর্ট দেওয়া হবে
-                          </span>
+                          <div className="flex items-center space-x-1.5 bg-amber-50 border border-amber-200 text-amber-900 px-3 py-1.5 rounded-xl text-[11px] font-bold">
+                            <Clock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            <span>
+                              {language === 'bn'
+                                ? 'অ্যাডমিন প্যানেল থেকে রিপোর্ট ড্রাইভ লিঙ্ক যুক্ত করলে এখানে ডাউনলোড অপশন চালু হবে'
+                                : 'Report download unlocks once Admin provides the Google Drive report link'}
+                            </span>
+                          </div>
                         )}
 
                         <a
@@ -604,15 +658,40 @@ export const UserProfileModal: React.FC = () => {
                         <span>অ্যাকাউন্ট চিরতরে মুছে ফেলার অপশন (Permanent Account Delete)</span>
                       </div>
                       <p className="text-[11px] text-rose-700">
-                        অ্যাকাউন্ট ডিলিট করলে আপনার প্রোফাইল তথ্য এবং স্থানীয় ডাটা স্থায়ীভাবে মুছে যাবে।
+                        অ্যাকাউন্ট ডিলিট করলে আপনার ইউজার আইডি ও প্রোফাইল তথ্য ডাটাবেস থেকে স্থায়ীভাবে মুছে যাবে এবং পুনরায় রেজিস্ট্রেশন ছাড়া লগইন করা যাবে না।
                       </p>
-                      <button
-                        onClick={handleDeleteAccountPermanently}
-                        className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer transition-colors"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>অ্যাকাউন্ট চিরতরে মুছে ফেলুন (Delete Account Permanently)</span>
-                      </button>
+                      {!confirmDeleteAccount ? (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteAccount(true)}
+                          className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-xl text-xs flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>অ্যাকাউন্ট চিরতরে মুছে ফেলুন (Delete Account Permanently)</span>
+                        </button>
+                      ) : (
+                        <div className="bg-white p-3 rounded-xl border border-rose-300 space-y-2">
+                          <p className="text-xs font-extrabold text-rose-800">
+                            আপনি কি নিশ্চিত যে আপনার ইউজার আইডি চিরতরে মুছে ফেলতে চান?
+                          </p>
+                          <div className="flex items-center space-x-2">
+                            <button
+                              type="button"
+                              onClick={handleDeleteAccountPermanently}
+                              className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-extrabold py-2 px-3 rounded-lg text-xs cursor-pointer"
+                            >
+                              হ্যাঁ, চিরতরে মুছে ফেলুন
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteAccount(false)}
+                              className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 px-3 rounded-lg text-xs cursor-pointer"
+                            >
+                              বাতিল করুন
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

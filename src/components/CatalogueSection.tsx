@@ -4,12 +4,12 @@ import { ProductCard } from './ProductCard';
 import { 
   Search, 
   X, 
-  Filter, 
   SlidersHorizontal, 
   Sparkles, 
   Activity, 
   PackageCheck, 
-  FileText 
+  FileText,
+  ChevronDown
 } from 'lucide-react';
 
 export const CatalogueSection: React.FC = () => {
@@ -25,6 +25,7 @@ export const CatalogueSection: React.FC = () => {
   } = useApp();
 
   const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc' | 'alpha'>('featured');
+  const [visibleCount, setVisibleCount] = useState<number>(36);
 
   // Enhanced Filter & Search Logic
   const filteredProducts = useMemo(() => {
@@ -104,6 +105,13 @@ export const CatalogueSection: React.FC = () => {
     return result;
   }, [products, selectedCategory, searchQuery, sortBy]);
 
+  const displayedProducts = useMemo(() => {
+    if (searchQuery.trim()) {
+      return filteredProducts;
+    }
+    return filteredProducts.slice(0, visibleCount);
+  }, [filteredProducts, visibleCount, searchQuery]);
+
   return (
     <section id="catalog" className="py-12 sm:py-16 bg-slate-50/70 border-b border-slate-200/70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -169,7 +177,10 @@ export const CatalogueSection: React.FC = () => {
           {/* Category Filters */}
           <div className="flex flex-wrap items-center justify-center gap-2">
             <button
-              onClick={() => setSelectedCategory('all')}
+              onClick={() => {
+                setSelectedCategory('all');
+                setVisibleCount(36);
+              }}
               className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 selectedCategory === 'all'
                   ? 'bg-[#e23744] text-white shadow-xs'
@@ -180,7 +191,10 @@ export const CatalogueSection: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setSelectedCategory('popular')}
+              onClick={() => {
+                setSelectedCategory('popular');
+                setVisibleCount(36);
+              }}
               className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1 cursor-pointer ${
                 selectedCategory === 'popular'
                   ? 'bg-[#e23744] text-white shadow-xs'
@@ -192,7 +206,10 @@ export const CatalogueSection: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setSelectedCategory('package')}
+              onClick={() => {
+                setSelectedCategory('package');
+                setVisibleCount(36);
+              }}
               className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1 cursor-pointer ${
                 selectedCategory === 'package'
                   ? 'bg-[#e23744] text-white shadow-xs'
@@ -204,7 +221,10 @@ export const CatalogueSection: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setSelectedCategory('profile')}
+              onClick={() => {
+                setSelectedCategory('profile');
+                setVisibleCount(36);
+              }}
               className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1 cursor-pointer ${
                 selectedCategory === 'profile'
                   ? 'bg-[#e23744] text-white shadow-xs'
@@ -216,7 +236,10 @@ export const CatalogueSection: React.FC = () => {
             </button>
 
             <button
-              onClick={() => setSelectedCategory('test')}
+              onClick={() => {
+                setSelectedCategory('test');
+                setVisibleCount(36);
+              }}
               className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center space-x-1 cursor-pointer ${
                 selectedCategory === 'test'
                   ? 'bg-[#e23744] text-white shadow-xs'
@@ -300,12 +323,40 @@ export const CatalogueSection: React.FC = () => {
         )}
 
         {/* Products Grid */}
-        {!isLoadingProducts && filteredProducts.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {filteredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
-          </div>
+        {!isLoadingProducts && displayedProducts.length > 0 && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {displayedProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
+
+            {!searchQuery.trim() && visibleCount < filteredProducts.length && (
+              <div className="mt-10 text-center flex flex-col sm:flex-row items-center justify-center gap-3">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + 48)}
+                  className="inline-flex items-center space-x-2 px-6 py-3.5 rounded-2xl bg-[#e23744] hover:bg-rose-700 text-white text-sm font-bold shadow-md transition-all cursor-pointer"
+                >
+                  <span>
+                    {language === 'bn'
+                      ? `আরও টেস্ট দেখুন (${filteredProducts.length - visibleCount} টি বাকি)`
+                      : `Load More Tests (${filteredProducts.length - visibleCount} remaining)`}
+                  </span>
+                  <ChevronDown className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setVisibleCount(filteredProducts.length)}
+                  className="inline-flex items-center space-x-2 px-5 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-slate-800 border border-slate-200 text-sm font-bold shadow-xs transition-all cursor-pointer"
+                >
+                  <span>
+                    {language === 'bn'
+                      ? `সবগুলো দেখুন (${filteredProducts.length})`
+                      : `Show All (${filteredProducts.length})`}
+                  </span>
+                </button>
+              </div>
+            )}
+          </>
         )}
 
       </div>

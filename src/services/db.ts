@@ -5,7 +5,7 @@ import { calculateFinalPrice } from '../utils/pricing';
 import { firestoreService, testFirestoreConnection } from './firebase';
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'thyrocare_products_v1',
+  PRODUCTS: 'thyrocare_products_v3_pdf',
   BOOKINGS: 'thyrocare_bookings_v1',
   USERS: 'thyrocare_users_v1',
   CONFIG: 'thyrocare_config_v1'
@@ -39,11 +39,20 @@ function getLocalProducts(): Product[] {
       return initialProducts;
     }
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed) && parsed.length > 0) {
+    if (Array.isArray(parsed) && parsed.length >= initialProducts.length) {
       return parsed;
     }
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(initialProducts));
-    return initialProducts;
+    // Merge any custom products with the full official PDF initialProducts list
+    const map = new Map<string, Product>();
+    initialProducts.forEach(p => map.set(p.test_code, p));
+    if (Array.isArray(parsed)) {
+      parsed.forEach((p: Product) => {
+        if (p && p.test_code) map.set(p.test_code, p);
+      });
+    }
+    const merged = Array.from(map.values());
+    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(merged));
+    return merged;
   } catch (e) {
     console.error('Error reading products from localStorage:', e);
     return initialProducts;
@@ -204,6 +213,30 @@ export const dbService = {
   },
 
   /**
+   * Update Google Drive Report Link for a customer booking
+   */
+  async updateBookingReportLink(id: string, reportDriveLink: string, status?: BookingStatus): Promise<void> {
+    const cleanLink = reportDriveLink.trim();
+    const uploadedAt = cleanLink ? new Date().toISOString() : '';
+    try {
+      await firestoreService.updateBookingReportLink(id, cleanLink, status);
+    } catch (err) {
+      console.warn('Firestore updateBookingReportLink warning:', err);
+    }
+
+    const current = getLocalBookings();
+    const item = current.find(b => b.id === id);
+    if (item) {
+      item.report_drive_link = cleanLink;
+      item.report_uploaded_at = uploadedAt;
+      if (status) {
+        item.booking_status = status;
+      }
+      setLocalBookings(current);
+    }
+  },
+
+  /**
    * Bulk import catalogue from JSON or CSV
    */
   async importProducts(imported: Product[]): Promise<number> {
@@ -231,10 +264,30 @@ export const dbService = {
   },
 
   /**
-   * Get user profile by email
+   * Get user profile by email (checks Firestore first, then local storage)
    */
   async getUserByEmail(email: string): Promise<import('../types').UserProfile | null> {
     const cleanEmail = email.trim().toLowerCase();
+    // 1. Check Firestore registered users
+    try {
+      const remoteUser = await firestoreService.getUserByEmail(cleanEmail);
+      if (remoteUser) {
+        // Sync to local cache
+        const users = getLocalUsers();
+        const idx = users.findIndex(u => u.email?.trim().toLowerCase() === cleanEmail || u.id === remoteUser.id);
+        if (idx >= 0) {
+          users[idx] = remoteUser;
+        } else {
+          users.push(remoteUser);
+        }
+        setLocalUsers(users);
+        return remoteUser;
+      }
+    } catch (e) {
+      console.warn('Firestore getUserByEmail check warning:', e);
+    }
+
+    // 2. Fallback to local storage
     const users = getLocalUsers();
     return users.find(u => u.email && u.email.trim().toLowerCase() === cleanEmail) || null;
   },
@@ -244,6 +297,9 @@ export const dbService = {
    */
   async getUserProfile(identifier: string): Promise<import('../types').UserProfile | null> {
     const clean = identifier.trim().toLowerCase();
+    if (clean.includes('@')) {
+      return this.getUserByEmail(clean);
+    }
     const cleanPhone = identifier.replace(/\D/g, '');
     const users = getLocalUsers();
     return users.find(u => 
@@ -253,23 +309,52 @@ export const dbService = {
   },
 
   /**
-   * Save or update user profile
+   * Save or update user profile in Firestore & Local Storage
    */
   async saveUserProfile(profile: import('../types').UserProfile): Promise<import('../types').UserProfile> {
     const cleanEmail = profile.email ? profile.email.trim().toLowerCase() : '';
+    const normalizedProfile: import('../types').UserProfile = {
+      ...profile,
+      email: cleanEmail
+    };
+
+    try {
+      await firestoreService.saveUserProfile(normalizedProfile);
+    } catch (err) {
+      console.warn('Firestore saveUserProfile warning:', err);
+    }
+
     const current = getLocalUsers();
     const existingIndex = current.findIndex(u => 
       (cleanEmail && u.email && u.email.trim().toLowerCase() === cleanEmail) || 
-      u.id === profile.id
+      u.id === normalizedProfile.id
     );
     
     if (existingIndex >= 0) {
-      current[existingIndex] = { ...current[existingIndex], ...profile };
+      current[existingIndex] = { ...current[existingIndex], ...normalizedProfile };
     } else {
-      current.push(profile);
+      current.push(normalizedProfile);
     }
     setLocalUsers(current);
-    return profile;
+    return normalizedProfile;
+  },
+
+  /**
+   * Permanently delete user profile from Firestore & Local Storage
+   */
+  async deleteUserProfile(userId: string, email?: string): Promise<void> {
+    try {
+      await firestoreService.deleteUserProfile(userId, email);
+    } catch (err) {
+      console.warn('Firestore deleteUserProfile warning:', err);
+    }
+
+    const cleanEmail = email ? email.trim().toLowerCase() : '';
+    const current = getLocalUsers();
+    const filtered = current.filter(u => 
+      u.id !== userId && (!cleanEmail || u.email?.trim().toLowerCase() !== cleanEmail)
+    );
+    setLocalUsers(filtered);
   },
 
   /**
@@ -277,11 +362,13 @@ export const dbService = {
    */
   async getBookingsForUser(identifier: { email?: string; userId?: string; phone?: string }): Promise<Booking[]> {
     const cleanPhone = identifier.phone?.replace(/\D/g, '');
+    const cleanEmail = identifier.email?.trim().toLowerCase();
     const all = await this.getBookings();
     return all.filter(b => {
-      const matchUser = identifier.userId && b.user_id === identifier.userId;
-      const matchPhone = cleanPhone && b.phone && b.phone.replace(/\D/g, '') === cleanPhone;
-      return matchUser || matchPhone;
+      const matchUser = Boolean(identifier.userId && b.user_id === identifier.userId);
+      const matchEmail = Boolean(cleanEmail && b.user_email && b.user_email.trim().toLowerCase() === cleanEmail);
+      const matchPhone = Boolean(cleanPhone && b.phone && b.phone.replace(/\D/g, '') === cleanPhone);
+      return matchUser || matchEmail || matchPhone;
     });
   },
 
@@ -292,3 +379,4 @@ export const dbService = {
     return this.getBookingsForUser({ phone, userId });
   }
 };
+

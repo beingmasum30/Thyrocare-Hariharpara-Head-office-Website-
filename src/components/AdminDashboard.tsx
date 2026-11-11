@@ -71,6 +71,8 @@ export const AdminDashboard: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [bookingFilter, setBookingFilter] = useState<string>('all');
   const [selectedBookingForView, setSelectedBookingForView] = useState<Booking | null>(null);
+  const [reportLinkDrafts, setReportLinkDrafts] = useState<Record<string, string>>({});
+  const [savingReportId, setSavingReportId] = useState<string | null>(null);
 
   // Product Edit Modal State
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -158,6 +160,37 @@ export const AdminDashboard: React.FC = () => {
     }
     await loadBookings();
     showNotification(`Booking status updated to "${newStatus}"`, 'success');
+  };
+
+  // Save Google Drive Report Link for customer booking
+  const handleSaveReportDriveLink = async (booking: Booking, customLink?: string) => {
+    const rawLink = customLink !== undefined ? customLink : (reportLinkDrafts[booking.id] ?? booking.report_drive_link ?? '');
+    const cleanLink = rawLink.trim();
+    setSavingReportId(booking.id);
+    try {
+      const nextStatus: BookingStatus = cleanLink ? 'Completed' : booking.booking_status;
+      await dbService.updateBookingReportLink(booking.id, cleanLink, nextStatus);
+      await loadBookings();
+      if (selectedBookingForView && selectedBookingForView.id === booking.id) {
+        setSelectedBookingForView({
+          ...selectedBookingForView,
+          report_drive_link: cleanLink,
+          report_uploaded_at: cleanLink ? new Date().toISOString() : '',
+          booking_status: nextStatus
+        });
+      }
+      showNotification(
+        cleanLink
+          ? `✅ "${booking.patient_name}"-এর রিপোর্ট ড্রাইভ লিঙ্ক সেভ হয়েছে! কাস্টমার এখন প্রোফাইল থেকে ডাউনলোড করতে পারবেন।`
+          : `রিপোর্ট ড্রাইভ লিঙ্ক মুছে ফেলা হয়েছে।`,
+        'success'
+      );
+    } catch (err) {
+      console.error('Error saving report drive link:', err);
+      showNotification('Failed to save report link', 'error');
+    } finally {
+      setSavingReportId(null);
+    }
   };
 
   // Product Save
@@ -713,6 +746,55 @@ export const AdminDashboard: React.FC = () => {
                                 <option value="Completed">Completed</option>
                                 <option value="Cancelled">Cancelled</option>
                               </select>
+                            </div>
+                          </div>
+
+                          {/* Patient Report Google Drive Link Control */}
+                          <div className="mt-3 pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50/80 p-3 rounded-xl border border-slate-200/70">
+                            <div className="flex items-center space-x-2 shrink-0">
+                              <span className="text-xs font-extrabold text-slate-800 flex items-center space-x-1.5">
+                                <span>📄 কাস্টমার রিপোর্ট Drive লিঙ্ক:</span>
+                              </span>
+                              {b.report_drive_link ? (
+                                <span className="text-[10px] font-extrabold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md border border-emerald-300 flex items-center space-x-1">
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <span>Active (Customer Can Download)</span>
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md border border-amber-200">
+                                  No Link Provided
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="flex items-center gap-2 flex-1 max-w-xl">
+                              <input
+                                type="url"
+                                value={reportLinkDrafts[b.id] !== undefined ? reportLinkDrafts[b.id] : (b.report_drive_link || '')}
+                                onChange={(e) => setReportLinkDrafts(prev => ({ ...prev, [b.id]: e.target.value }))}
+                                placeholder="Paste Google Drive Report Link (https://drive.google.com/...)"
+                                className="flex-1 px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 font-medium"
+                              />
+                              <button
+                                type="button"
+                                disabled={savingReportId === b.id}
+                                onClick={() => handleSaveReportDriveLink(b)}
+                                className="bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white font-bold text-xs px-3 py-1.5 rounded-lg shadow-2xs transition-colors cursor-pointer shrink-0"
+                              >
+                                {savingReportId === b.id ? 'Saving...' : 'Save Link'}
+                              </button>
+                              {b.report_drive_link && (
+                                <a
+                                  href={b.report_drive_link}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-2.5 py-1.5 rounded-lg inline-flex items-center space-x-1 shrink-0"
+                                  title="Open Report Drive Link"
+                                >
+                                  <ExternalLink className="w-3.5 h-3.5" />
+                                  <span>View</span>
+                                </a>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1330,6 +1412,43 @@ CREATE TABLE IF NOT EXISTS public.booking_items (
               <div className="flex justify-between text-sm font-bold border-t pt-2">
                 <span>Total Amount:</span>
                 <span className="text-purple-900">{formatCurrency(selectedBookingForView.final_total)}</span>
+              </div>
+
+              {/* Report Google Drive Link in Details Modal */}
+              <div className="pt-3 border-t space-y-2">
+                <label className="block text-xs font-extrabold text-slate-800">
+                  📄 Patient Report Google Drive Link (রোগীর প্রোফাইলে ডাউনলোডের জন্য):
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="url"
+                    value={
+                      reportLinkDrafts[selectedBookingForView.id] !== undefined
+                        ? reportLinkDrafts[selectedBookingForView.id]
+                        : selectedBookingForView.report_drive_link || ''
+                    }
+                    onChange={(e) =>
+                      setReportLinkDrafts((prev) => ({
+                        ...prev,
+                        [selectedBookingForView.id]: e.target.value
+                      }))
+                    }
+                    placeholder="https://drive.google.com/file/d/..."
+                    className="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-purple-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleSaveReportDriveLink(selectedBookingForView)}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl cursor-pointer shrink-0"
+                  >
+                    Save Link
+                  </button>
+                </div>
+                {selectedBookingForView.report_drive_link && (
+                  <p className="text-[11px] text-emerald-700 font-bold">
+                    ✓ Report link is active. Customer can download this report from their User Profile.
+                  </p>
+                )}
               </div>
             </div>
 

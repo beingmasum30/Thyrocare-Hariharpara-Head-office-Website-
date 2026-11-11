@@ -8,7 +8,8 @@ export interface Product {
   name: string;
   name_bn: string;
   category: ProductCategory;
-  mrp: number; // MRP as mandated (never 'Your Rate')
+  mrp: number; // Official MRP from Rate List PDF
+  your_rate?: number; // Official Offer / Partner Rate from Rate List PDF
   discount_type: DiscountType;
   discount_value: number; // percentage (e.g. 25) or fixed rupees (e.g. 200)
   final_price: number;
@@ -54,6 +55,7 @@ export interface BookingItem {
 export interface Booking {
   id: string;
   user_id?: string;
+  user_email?: string;
   patient_name: string;
   age: number | string;
   gender: 'Male' | 'Female' | 'Other';
@@ -74,6 +76,8 @@ export interface Booking {
   total_discount: number;
   final_total: number;
   booking_status: BookingStatus;
+  report_drive_link?: string;
+  report_uploaded_at?: string;
   whatsapp_opened: boolean;
   created_at: string;
   items: BookingItem[];

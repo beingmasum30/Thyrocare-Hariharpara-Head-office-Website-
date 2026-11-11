@@ -25,7 +25,9 @@
         "maps_link": { "type": "string", "maxLength": 500 },
         "latitude": { "type": "number" },
         "longitude": { "type": "number" },
-        "gps_accuracy": { "type": "number" }
+        "gps_accuracy": { "type": "number" },
+        "report_drive_link": { "type": "string", "maxLength": 1000 },
+        "report_uploaded_at": { "type": "string", "maxLength": 100 }
       },
       "required": ["id", "patient_name", "phone", "collection_type", "preferred_date", "final_total", "booking_status"]
     },
@@ -48,6 +50,27 @@
         "is_active": { "type": "boolean" }
       },
       "required": ["id", "test_code", "name", "mrp", "final_price"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Registered patient user account authorized via Gmail OTP",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "name": { "type": "string", "maxLength": 200 },
+        "email": { "type": "string", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 20 },
+        "avatar": { "type": "string", "maxLength": 500 },
+        "auth_provider": { "type": "string", "enum": ["google", "email"] },
+        "is_verified": { "type": "boolean" },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "address": { "type": "string", "maxLength": 1000 },
+        "area": { "type": "string", "maxLength": 200 },
+        "pincode": { "type": "string", "maxLength": 10 },
+        "created_at": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "name", "email", "is_verified", "created_at"]
     }
   },
   "firestore": {
@@ -58,6 +81,10 @@
     "/products/{productId}": {
       "schema": { "$ref": "#/entities/Product" },
       "description": "Collection of diagnostic tests and packages"
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Collection of registered patient user accounts"
     }
   }
 }

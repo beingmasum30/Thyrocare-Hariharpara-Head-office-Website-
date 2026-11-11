@@ -254,10 +254,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     reloadProducts();
 
-    // Subscribe to Firestore Realtime product changes
-    const unsubscribe = firestoreService.subscribeProducts((liveProducts: Product[]) => {
+    // Subscribe to Firestore Realtime product changes and merge with initial catalogue
+    const unsubscribe = firestoreService.subscribeProducts(async (liveProducts: Product[]) => {
       if (liveProducts && liveProducts.length > 0) {
-        setProducts(liveProducts);
+        const base = await dbService.getProducts();
+        const map = new Map<string, Product>();
+        base.forEach(p => map.set(p.test_code, p));
+        liveProducts.forEach(p => {
+          if (p && p.test_code) map.set(p.test_code, p);
+        });
+        setProducts(Array.from(map.values()));
       }
     });
 

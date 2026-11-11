@@ -240,6 +240,7 @@ export const BookingModal: React.FC = () => {
       const bookingRecord: Booking = {
         id: `book-${Date.now()}`,
         user_id: currentUser?.id,
+        user_email: currentUser?.email,
         patient_name: patientName.trim(),
         age: Number(age),
         gender,
