@@ -465,18 +465,18 @@ export const Navbar: React.FC = () => {
         </div>
       </div>
 
-      {/* Mobile Drawer Menu / Sidebar with smooth scrolling and fixed backdrop */}
+      {/* Navigation Drawer Menu / Sidebar with smooth scrolling and fixed backdrop */}
       {mobileMenuOpen && (
         <>
           {/* Backdrop */}
           <div
-            className="fixed inset-0 top-16 bg-slate-950/40 backdrop-blur-xs z-40 md:hidden animate-in fade-in duration-150"
+            className="fixed inset-0 top-16 bg-slate-950/40 backdrop-blur-xs z-40 animate-in fade-in duration-150"
             onClick={() => setMobileMenuOpen(false)}
           />
 
           {/* Smoothly Scrollable Drawer Container */}
           <div 
-            className="fixed top-16 left-0 right-0 bottom-0 z-50 md:hidden bg-white overflow-y-auto overscroll-contain shadow-2xl flex flex-col animate-in slide-in-from-top-2 duration-200"
+            className="fixed top-16 left-0 bottom-0 w-full sm:w-80 z-50 bg-white overflow-y-auto overscroll-contain shadow-2xl flex flex-col animate-in slide-in-from-top-2 duration-200 border-r border-slate-200"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             <div className="p-4 space-y-2 pb-28">

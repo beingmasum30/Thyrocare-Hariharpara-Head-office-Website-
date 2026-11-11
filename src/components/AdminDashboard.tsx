@@ -376,9 +376,7 @@ export const AdminDashboard: React.FC = () => {
             <button
               onClick={() => {
                 setIsAdminOpen(false);
-                if (window.location.hash.toLowerCase().includes('admin') || window.location.pathname.toLowerCase().includes('admin')) {
-                  window.history.replaceState(null, '', '/');
-                }
+                window.history.replaceState(null, '', '/');
               }}
               className="text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-800 transition-colors"
             >
@@ -416,13 +414,12 @@ export const AdminDashboard: React.FC = () => {
                       <input
                         type="text"
                         required
-                        autoFocus
                         value={adminId}
                         onChange={(e) => {
                           setAdminId(e.target.value);
                           if (authError) setAuthError('');
                         }}
-                        placeholder="Enter Admin ID (tchhp)"
+                        placeholder="Enter Admin ID"
                         className="w-full pl-10 pr-3 py-2.5 text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-rose-500/20 focus:border-[#e23744]"
                       />
                     </div>

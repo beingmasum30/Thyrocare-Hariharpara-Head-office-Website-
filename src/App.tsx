@@ -29,38 +29,32 @@ import { CheckCircle2, AlertCircle, Info } from 'lucide-react';
 const MainLayout: React.FC = () => {
   const { notification, setIsAdminOpen } = useApp();
 
-  // Direct Web URL Access Listeners for Thyrocare Hariharpara Admin Portal:
-  // 1. Pathname: /admin, /admin-portal, /portal
-  // 2. Hash: #admin, #admin-portal, #/admin
-  // 3. Search query: ?admin, ?admin=login, ?portal=admin
-  // 4. Keyboard Shortcut: Ctrl + Shift + A (or Cmd + Shift + A)
+  // Ensure Admin Login never opens automatically on page load in desktop browsers.
+  // Clean any stale /admin, #admin, or ?admin from browser URL history/autocomplete on mount.
   React.useEffect(() => {
-    const checkAdminRoute = () => {
-      const pathname = window.location.pathname.toLowerCase();
-      const hash = window.location.hash.toLowerCase();
-      const search = window.location.search.toLowerCase();
+    setIsAdminOpen(false);
 
-      const isAdminUrl = 
-        pathname === '/admin' ||
-        pathname === '/admin/' ||
-        pathname.startsWith('/admin') ||
-        pathname === '/admin-portal' ||
-        pathname === '/portal' ||
-        hash === '#admin' ||
-        hash === '#admin-portal' ||
-        hash === '#/admin' ||
-        search.includes('admin=') ||
-        search === '?admin' ||
-        search.includes('portal=admin');
+    const pathname = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase();
+    const search = window.location.search.toLowerCase();
 
-      if (isAdminUrl) {
+    if (
+      pathname.includes('admin') ||
+      pathname.includes('portal') ||
+      hash.includes('admin') ||
+      search.includes('admin') ||
+      search.includes('portal')
+    ) {
+      window.history.replaceState(null, '', '/');
+    }
+
+    const handleHashChange = () => {
+      const currentHash = window.location.hash.toLowerCase();
+      if (currentHash === '#admin' || currentHash === '#admin-portal' || currentHash === '#/admin') {
         setIsAdminOpen(true);
+        window.history.replaceState(null, '', '/');
       }
     };
-
-    checkAdminRoute();
-    window.addEventListener('hashchange', checkAdminRoute);
-    window.addEventListener('popstate', checkAdminRoute);
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'a') {
@@ -69,11 +63,11 @@ const MainLayout: React.FC = () => {
       }
     };
 
+    window.addEventListener('hashchange', handleHashChange);
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      window.removeEventListener('hashchange', checkAdminRoute);
-      window.removeEventListener('popstate', checkAdminRoute);
+      window.removeEventListener('hashchange', handleHashChange);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [setIsAdminOpen]);
