@@ -254,14 +254,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     reloadProducts();
 
-    // Subscribe to Firestore Realtime product changes and merge with initial catalogue
+    // Subscribe to Firestore Realtime product changes and merge admin-edited items with initial catalogue
     const unsubscribe = firestoreService.subscribeProducts(async (liveProducts: Product[]) => {
       if (liveProducts && liveProducts.length > 0) {
         const base = await dbService.getProducts();
         const map = new Map<string, Product>();
         base.forEach(p => map.set(p.test_code, p));
         liveProducts.forEach(p => {
-          if (p && p.test_code) map.set(p.test_code, p);
+          if (p && p.test_code && p.updated_at) {
+            map.set(p.test_code, p);
+          }
         });
         setProducts(Array.from(map.values()));
       }

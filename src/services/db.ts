@@ -5,7 +5,7 @@ import { calculateFinalPrice } from '../utils/pricing';
 import { firestoreService, testFirestoreConnection } from './firebase';
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'thyrocare_products_v3_pdf',
+  PRODUCTS: 'thyrocare_products_v4_mrp_pdf',
   BOOKINGS: 'thyrocare_bookings_v1',
   USERS: 'thyrocare_users_v1',
   CONFIG: 'thyrocare_config_v1'
